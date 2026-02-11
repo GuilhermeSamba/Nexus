@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ENGINE - V6 PVP & ADMIN TOOLS</title>
+    <title>NEXUS ENGINE - V7 WEAPONS UPDATE</title>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
@@ -70,8 +70,6 @@
         #mobile-controls { position: absolute; bottom: 30px; left: 20px; display: grid; grid-template-columns: repeat(3, 65px); gap: 10px; z-index: 100; }
         .btn-game { width: 65px; height: 65px; background: rgba(0,0,0,0.3); border: 2px solid #00ff00; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00ff00; font-weight: bold; user-select: none; backdrop-filter: blur(4px); }
         .btn-game:active { background: rgba(0,255,0,0.3); }
-        /* BOTÃO DE ATAQUE (Invisível mas clicável na tela toda, ou específico) */
-        /* Usaremos click na tela (raycast) para atacar */
     </style>
 </head>
 <body>
@@ -164,14 +162,17 @@
         let collidableObjects = []; 
         let raycaster = new THREE.Raycaster();
         let combatRaycaster = new THREE.Raycaster();
+        
+        // Armas Visuais
+        let mySword, myGun;
 
         // Atributos Especiais
         let isFlying = false;
         let isGiant = false;
         let isAdmin = false;
         let hasGun = false;
-        let isGod = false; // Imortal
-        let inArena = false; // Se está na arena
+        let isGod = false; 
+        let inArena = false; 
 
         // UI Chat
         function toggleChatUI() {
@@ -241,8 +242,11 @@
             document.getElementById('chat-container').classList.remove('hidden');
             document.getElementById('player-list-box').classList.remove('hidden');
             document.getElementById('crosshair').classList.remove('hidden');
+            
             initEngine();
             updateRecentUI();
+            
+            // AUTOMATICAMENTE ENTRA NA ROOM1
             document.getElementById('room-input').value = "room1";
             startMesh();
         }
@@ -274,9 +278,23 @@
             addChatMessage("SISTEMA", `COMANDO ${type} ENVIADO PARA: ${target}`);
         }
 
-        // --- SISTEMA DE COMBATE ---
+        // --- SISTEMA DE COMBATE & VISUAL ---
         function updateWeaponStatus() {
             const alertBox = document.getElementById('weapon-alert');
+            // Controle de visibilidade das armas locais
+            if (mySword && myGun) {
+                if(hasGun) {
+                    mySword.visible = false;
+                    myGun.visible = true;
+                } else if(inArena) {
+                    mySword.visible = true;
+                    myGun.visible = false;
+                } else {
+                    mySword.visible = false;
+                    myGun.visible = false;
+                }
+            }
+
             if(hasGun) {
                 alertBox.innerText = "ARMA EQUIPADA (ADM)";
                 alertBox.style.display = 'block';
@@ -292,35 +310,26 @@
         function attemptAttack() {
             if(!hasGun && !inArena) return;
 
-            // Configura o raycaster a partir da câmera
             combatRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             
-            // Objetos para checar (meshes dos outros players)
             const targets = [];
             for(let id in remotePlayers) {
                 targets.push(remotePlayers[id].mesh);
             }
 
-            // Distância do ataque
-            const range = hasGun ? 100 : 5; // Arma 100m, Espada 5m
+            const range = hasGun ? 100 : 5; 
             const intersects = combatRaycaster.intersectObjects(targets);
 
             if(intersects.length > 0 && intersects[0].distance <= range) {
                 const hitMesh = intersects[0].object;
-                // Encontrar quem é o dono do mesh
                 for(let id in remotePlayers) {
                     if(remotePlayers[id].mesh === hitMesh) {
-                        // HIT CONFIRMADO
                         showHitEffect(intersects[0].point);
-                        // Enviar dano
                         const dmgData = { type: 'damage', targetId: id, damage: 100, shooter: myNick };
                         if(isHost) {
-                            // Se sou host, processo direto ou repasso
                             const conn = connections[id];
                             if(conn) conn.send(dmgData);
                         } else {
-                            // Envio pro host processar/repassar
-                            // (Neste p2p simples, vou mandar direto pra todo mundo e quem for o alvo aceita)
                             broadcast(dmgData); 
                         }
                         addChatMessage("COMBATE", `Você acertou ${remotePlayers[id].nick}!`);
@@ -328,7 +337,6 @@
                     }
                 }
             } else {
-                // Errou ou atirou no chao
                 if(hasGun) showLaser(combatRaycaster.ray);
             }
         }
@@ -343,11 +351,10 @@
         }
 
         function showLaser(ray) {
-            // Visual simples do tiro
             const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
             const points = [];
             points.push(playerMesh.position.clone().add(new THREE.Vector3(0,0.5,0))); 
-            points.push(ray.at(50, new THREE.Vector3())); // Ponta do laser longe
+            points.push(ray.at(50, new THREE.Vector3())); 
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, material);
             scene.add(line);
@@ -355,8 +362,8 @@
         }
 
         function dieAndRespawn() {
-            if(isGod) return; // Imortal
-            playerMesh.position.set(0, 10, 0); // Respawn point
+            if(isGod) return; 
+            playerMesh.position.set(0, 10, 0); 
             velocityY = 0;
             addChatMessage("COMBATE", "VOCÊ MORREU!");
         }
@@ -396,6 +403,7 @@
         function setupConn(conn) {
             conn.on('open', () => {
                 connections[conn.peer] = conn;
+                // Envia pacote inicial
                 conn.send({ type: 'hello', nick: myNick, x: 0, y: 0.5, z: 0, senderId: myID, scale: isGiant?5:1, color: myColor });
                 updatePlayerList();
             });
@@ -408,12 +416,7 @@
                 data.senderId = data.senderId || senderPeerId; 
                 broadcast(data, senderPeerId);
             }
-            // Se eu sou o alvo do dano
             if(data.type === 'damage') {
-                // No PeerJS direto, myID pode variar, vamos checar se sender mandou pra todos
-                // Se o ID bater ou se for broadcast, checamos logica
-                // Simplificação: Se eu recebo "damage" e o targetId sou eu (pelo sender logic)
-                // Vamos usar senderId nos pacotes pra identificar
                 if(data.targetId === myID || (isHost && data.targetId === peer.id)) {
                     dieAndRespawn();
                 }
@@ -423,7 +426,6 @@
 
             if(data.type === 'hello' || data.type === 'move') {
                 updateRemote(data.senderId, data);
-                // Atualiza lista se for novo
                 if(data.type === 'hello') updatePlayerList();
             }
             if(data.type === 'chat') addChatMessage(data.nick, data.text);
@@ -487,6 +489,42 @@
             return new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), mat);
         }
 
+        // Helper para criar armas
+        function createWeaponMesh(type) {
+            const group = new THREE.Group();
+            if(type === 'sword') {
+                // Cabo
+                const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.1), new THREE.MeshLambertMaterial({color:0x8B4513}));
+                // Lâmina
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.05), new THREE.MeshStandardMaterial({color:0xcccccc, metalness:0.8, roughness:0.2}));
+                blade.position.y = 0.8;
+                // Guarda
+                const guard = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.1), new THREE.MeshLambertMaterial({color:0xFFD700}));
+                guard.position.y = 0.2;
+                
+                group.add(handle, blade, guard);
+                // Posicionar na "mão" (lado direito do cubo)
+                group.rotation.x = Math.PI / 2; // Apontar pra frente
+                group.position.set(0.6, 0, -0.4);
+            } else if (type === 'gun') {
+                // Corpo da arma
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.6), new THREE.MeshLambertMaterial({color:0x111111}));
+                // Cano
+                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6), new THREE.MeshLambertMaterial({color:0x333333}));
+                barrel.rotation.x = Math.PI / 2;
+                barrel.position.z = -0.3;
+                barrel.position.y = 0.05;
+                // Cabo
+                const handle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), new THREE.MeshLambertMaterial({color:0x000000}));
+                handle.position.y = -0.2;
+                handle.rotation.x = 0.5;
+
+                group.add(body, barrel, handle);
+                group.position.set(0.6, 0, -0.4);
+            }
+            return group;
+        }
+
         function initEngine() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB); 
@@ -497,9 +535,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
             
-            // Evento de Clique para Atacar
             renderer.domElement.addEventListener('pointerdown', (e) => {
-                // Se clicou nos controles móveis, não atira
                 if(e.target.className.includes('btn-game')) return;
                 attemptAttack();
             });
@@ -524,7 +560,7 @@
             scene.add(new THREE.GridHelper(100, 50, 0x000000, 0x004400));
             collidableObjects.push(plane);
 
-            // PAREDES INVISÍVEIS (Limites)
+            // PAREDES
             const wallMat = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.1, transparent: true, side: THREE.DoubleSide });
             const w1 = new THREE.Mesh(new THREE.BoxGeometry(100, 50, 1), wallMat); w1.position.set(0, 25, -50); scene.add(w1);
             const w2 = new THREE.Mesh(new THREE.BoxGeometry(100, 50, 1), wallMat); w2.position.set(0, 25, 50); scene.add(w2);
@@ -532,17 +568,17 @@
             const w4 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 100), wallMat); w4.position.set(-50, 25, 0); scene.add(w4);
             collidableObjects.push(w1, w2, w3, w4);
 
-            // --- ARENA DE LUTA ---
-            const arenaGeo = new THREE.BoxGeometry(30, 1, 30);
-            const arenaMat = new THREE.MeshStandardMaterial({ color: 0xaa0000 }); // Vermelho Sangue
+            // --- ARENA DE LUTA (MENOR AGORA) ---
+            // Tamanho alterado de 30 para 12
+            const arenaGeo = new THREE.BoxGeometry(12, 1, 12);
+            const arenaMat = new THREE.MeshStandardMaterial({ color: 0xaa0000 }); 
             const arena = new THREE.Mesh(arenaGeo, arenaMat);
-            arena.position.set(-40, 5, 0); // Flutuando ao lado
+            arena.position.set(-40, 5, 0); 
             arena.receiveShadow = true;
             scene.add(arena);
             collidableObjects.push(arena);
             
-            // Placa Arena
-            const signArena = createSign("ARENA PVP - ENTRE P/ MATAR", "#000");
+            const signArena = createSign("ARENA PVP", "#000");
             signArena.position.set(-40, 10, 0);
             scene.add(signArena);
 
@@ -556,7 +592,7 @@
                 collidableObjects.push(p);
             }
 
-            // --- ESCADA CIRCULAR ---
+            // --- ESCADA ---
             const stepGeo = new THREE.BoxGeometry(3, 0.5, 1);
             const stepMat = new THREE.MeshStandardMaterial({ color: 0xFF00FF });
             for(let i=0; i<80; i++) {
@@ -567,18 +603,21 @@
                 step.rotation.y = -angle;
                 scene.add(step);
                 collidableObjects.push(step);
-                if(i === 79) {
-                    const sign = createSign("SAI DAQUI", "#aa0000");
-                    sign.position.set(step.position.x, step.position.y + 3, step.position.z);
-                    sign.lookAt(0, step.position.y + 3, 0);
-                    scene.add(sign);
-                }
             }
 
-            // PLAYER
+            // PLAYER & WEAPONS
             playerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: myColor }));
             playerMesh.position.y = 0.5;
             playerMesh.castShadow = true;
+            
+            // Adicionar armas ao player
+            mySword = createWeaponMesh('sword');
+            myGun = createWeaponMesh('gun');
+            mySword.visible = false;
+            myGun.visible = false;
+            playerMesh.add(mySword);
+            playerMesh.add(myGun);
+
             scene.add(playerMesh);
 
             // CÂMERA
@@ -599,7 +638,6 @@
         }
 
         function checkCollisions() {
-            // Paredes
             if(playerMesh.position.x > 49) playerMesh.position.x = 49;
             if(playerMesh.position.x < -49) playerMesh.position.x = -49;
             if(playerMesh.position.z > 49) playerMesh.position.z = 49;
@@ -649,17 +687,20 @@
             controls.target.copy(playerMesh.position);
             controls.update();
 
-            // Lógica Arena
-            // A arena está em x: -40, z: 0. Tamanho 30x30.
-            if(playerMesh.position.x > -55 && playerMesh.position.x < -25 && 
-               playerMesh.position.z > -15 && playerMesh.position.z < 15 && 
+            // Lógica Arena Atualizada para Tamanho Menor (Centro -40, Raio aprox 6)
+            if(playerMesh.position.x > -46 && playerMesh.position.x < -34 && 
+               playerMesh.position.z > -6 && playerMesh.position.z < 6 && 
                playerMesh.position.y > 4) {
                    if(!inArena) { inArena = true; updateWeaponStatus(); }
                } else {
                    if(inArena) { inArena = false; updateWeaponStatus(); }
                }
 
-            if(moved || !isGrounded || isFlying) {
+            if(moved || !isGrounded || isFlying || inArena || hasGun) {
+                // Enviar estado da arma no pacote de movimento
+                // wp: 0 = nada, 1 = espada, 2 = arma
+                const wpState = hasGun ? 2 : (inArena ? 1 : 0);
+                
                 const moveData = { 
                     type:'move', 
                     x:playerMesh.position.x, 
@@ -668,13 +709,14 @@
                     nick: myNick, 
                     senderId: myID,
                     scale: isGiant ? 5 : 1,
-                    color: myColor
+                    color: myColor,
+                    wp: wpState 
                 };
                 if(isHost) broadcast(moveData, null); 
                 else for(let id in connections) connections[id].send(moveData);
             }
 
-            // Tags
+            // Tags e Interpolação
             for(let id in remotePlayers) {
                 const p = remotePlayers[id];
                 p.mesh.position.lerp(p.targetPos, 0.2);
@@ -693,16 +735,38 @@
             if(!remotePlayers[id]) {
                 const pColor = data.color || 0x00ffff;
                 const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: pColor }));
+                
+                // Adicionar armas visuais ao remote player
+                const rSword = createWeaponMesh('sword');
+                const rGun = createWeaponMesh('gun');
+                rSword.visible = false;
+                rGun.visible = false;
+                mesh.add(rSword);
+                mesh.add(rGun);
+                
                 mesh.castShadow = true;
                 scene.add(mesh);
                 const tag = document.createElement('div');
                 tag.className = 'player-tag';
-                tag.innerText = data.nick || "Player"; // Tag ainda existe em cima da cabeça
+                tag.innerText = data.nick || "Player";
                 document.body.appendChild(tag);
-                remotePlayers[id] = { mesh, tag, targetPos: new THREE.Vector3(data.x, data.y, data.z), nick: data.nick };
+                
+                remotePlayers[id] = { 
+                    mesh, tag, 
+                    targetPos: new THREE.Vector3(data.x, data.y, data.z), 
+                    nick: data.nick,
+                    sword: rSword,
+                    gun: rGun 
+                };
             } else {
                 remotePlayers[id].targetPos.set(data.x, data.y, data.z);
                 if(data.scale) remotePlayers[id].mesh.scale.set(data.scale, data.scale, data.scale);
+                
+                // Atualizar arma do remote player baseado no pacote 'wp'
+                const p = remotePlayers[id];
+                if(data.wp === 2) { p.sword.visible=false; p.gun.visible=true; }
+                else if(data.wp === 1) { p.sword.visible=true; p.gun.visible=false; }
+                else { p.sword.visible=false; p.gun.visible=false; }
             }
         }
 
