@@ -41,8 +41,12 @@
         #chat-container.minimized { height: 30px; width: auto; }
         #chat-container.minimized #chat-messages, #chat-container.minimized #chat-input-area { display: none !important; }
 
-        /* ADMIN */
-        #admin-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(255,0,0,0.2); border: 1px solid red; padding: 8px; border-radius: 8px; z-index: 8000; display: flex; gap: 8px; align-items: center; }
+        /* ADMIN PANEL (ATUALIZADO) */
+        #admin-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(20,0,0,0.9); border: 2px solid red; padding: 10px; border-radius: 12px; z-index: 8000; display: flex; flex-direction: column; gap: 8px; align-items: center; min-width: 200px; }
+        .admin-row { display: flex; gap: 5px; width: 100%; justify-content: center; }
+        .admin-btn { background: #440000; color: white; border: 1px solid red; font-size: 10px; padding: 5px; cursor: pointer; border-radius: 4px; flex: 1; }
+        .admin-btn:active { background: red; }
+        #admin-ban-nick { width: 80%; font-size: 10px; padding: 4px; margin: 0; }
 
         /* TAGS */
         .player-tag { position: absolute; padding: 2px 8px; background: rgba(0,0,0,0.7); color: #00ff00; border: 1px solid #00ff00; border-radius: 4px; font-size: 11px; pointer-events: none; transform: translate(-50%, -100%); white-space: nowrap; }
@@ -60,6 +64,7 @@
             <input type="email" id="email-field" placeholder="Seu Gmail" readonly onclick="openKeyboard(this)">
             <input type="text" id="user-field" placeholder="Nick do Jogo" readonly onclick="openKeyboard(this)">
             <button onclick="request2FA()">RECEBER CÓDIGO</button>
+            <button onclick="loginAsGuest()" style="margin-top: 10px; background: transparent; border: 1px solid #00ff00; color: #00ff00;">ENTRAR COMO GUEST</button>
         </div>
     </div>
 
@@ -72,9 +77,20 @@
     </div>
 
     <div id="admin-panel" class="hidden">
-        <span style="color:red; font-size:10px; font-weight:bold;">LUANA-ADM</span>
-        <button onclick="changeSpeed(0.1)" style="background:#440000; color:white; border:1px solid red; font-size:10px;">VEL+</button>
-        <button onclick="broadcast({type:'kick-all'})" style="background:red; color:white; font-size:10px;">KICK ALL</button>
+        <span style="color:red; font-size:11px; font-weight:bold;">SISTEMA ADM - NEXUS</span>
+        <div class="admin-row">
+            <button class="admin-btn" onclick="toggleFly()">VOAR: OFF</button>
+            <button class="admin-btn" onclick="toggleGiant()">GIGANTE: OFF</button>
+        </div>
+        <div class="admin-row">
+            <button class="admin-btn" onclick="changeSpeed(0.2)">VEL++</button>
+            <button class="admin-btn" onclick="broadcast({type:'kick-all'})" style="background: red;">KICK ALL</button>
+        </div>
+        <input type="text" id="admin-ban-nick" placeholder="Nick para Banir" onclick="openKeyboard(this)">
+        <div class="admin-row">
+            <button class="admin-btn" onclick="adminAction('ban-temp')">BAN TEMP</button>
+            <button class="admin-btn" onclick="adminAction('ban-perm')">BAN PERM</button>
+        </div>
     </div>
 
     <div id="server-menu">
@@ -115,9 +131,13 @@
         let peer, connections = {}; 
         let myNick = "", myEmail = "", myCode = "", myID = "";
         let remotePlayers = {}; 
-        let isHost = false; // VARIAVEL NOVA PARA SABER SE SOU HOST
+        let isHost = false; 
         const keys = { w:false, a:false, s:false, d:false };
         let velocityY = 0, isGrounded = false, moveSpeed = 0.2;
+        
+        // Atributos ADM
+        let isFlying = false;
+        let isGiant = false;
 
         // --- UI CHAT ---
         function toggleChatUI() {
@@ -140,7 +160,17 @@
 
         // --- LOGIN ---
         emailjs.init("moDwTMHMA3q3OPbuy");
+        
+        function checkBan() {
+            const permBan = localStorage.getItem('nexus_perm_ban');
+            const tempBan = localStorage.getItem('nexus_temp_ban');
+            if(permBan) { alert("VOCÊ FOI BANIDO PERMANENTEMENTE."); return true; }
+            if(tempBan && Date.now() < parseInt(tempBan)) { alert("VOCÊ ESTÁ BANIDO TEMPORARIAMENTE."); return true; }
+            return false;
+        }
+
         function request2FA() {
+            if(checkBan()) return;
             myEmail = document.getElementById('email-field').value.trim().toLowerCase();
             myNick = document.getElementById('user-field').value.trim() || "User";
             myCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -161,120 +191,127 @@
                 document.getElementById('chat-container').classList.remove('hidden');
                 initEngine();
                 updateRecentUI();
+                document.getElementById('room-input').value = "room1";
+                startMesh();
             } else alert("Código Inválido");
         }
 
-        // --- LÓGICA DE REDE CORRIGIDA (HOST vs CLIENTE) ---
+        function loginAsGuest() {
+            if(checkBan()) return;
+            let inputNick = document.getElementById('user-field').value.trim();
+            myNick = inputNick || "Guest_" + Math.floor(Math.random() * 9999);
+            myEmail = "guest@nexus.local"; 
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('mobile-controls').classList.remove('hidden');
+            document.getElementById('chat-container').classList.remove('hidden');
+            initEngine();
+            updateRecentUI();
+            document.getElementById('room-input').value = "room1";
+            startMesh();
+        }
+
+        // --- FUNÇÕES ADM ---
+        function toggleFly() {
+            isFlying = !isFlying;
+            document.querySelectorAll('.admin-btn')[0].innerText = `VOAR: ${isFlying ? 'ON' : 'OFF'}`;
+            if(!isFlying) velocityY = 0;
+        }
+        function toggleGiant() {
+            isGiant = !isGiant;
+            const s = isGiant ? 5 : 1;
+            playerMesh.scale.set(s, s, s);
+            document.querySelectorAll('.admin-btn')[1].innerText = `GIGANTE: ${isGiant ? 'ON' : 'OFF'}`;
+        }
+        function adminAction(type) {
+            const target = document.getElementById('admin-ban-nick').value.trim();
+            if(!target) return alert("Digite o nick do alvo");
+            broadcast({ type: 'admin-cmd', cmd: type, target: target });
+            addChatMessage("SISTEMA", `COMANDO ${type} ENVIADO PARA: ${target}`);
+        }
+
+        // --- LÓGICA DE REDE ---
         function startMesh() {
             let room = document.getElementById('room-input').value.trim().toLowerCase();
             if(!room) return;
             const fullRoomID = room.startsWith(PREFIX) ? room : PREFIX + room;
-            
             document.getElementById('server-menu').classList.remove('open');
             document.getElementById('status-net').innerText = "CONECTANDO...";
             saveRecent(room);
-
-            // 1. TENTA SER O HOST (DONO DA SALA)
             tryToBecomeHost(fullRoomID, room);
         }
 
         function tryToBecomeHost(id, roomNameDisplay) {
-            peer = new Peer(id); // Tenta pegar o ID principal
-            
+            peer = new Peer(id);
             peer.on('open', (myPeerId) => {
-                // SUCESSO! Sou o Host
-                myID = myPeerId;
-                isHost = true;
+                myID = myPeerId; isHost = true;
                 document.getElementById('status-net').innerText = "HOST: " + roomNameDisplay;
-                addChatMessage("SISTEMA", "Sala criada. Aguardando jogadores...");
             });
-
             peer.on('error', (err) => {
-                if(err.type === 'unavailable-id') {
-                    // ID EM USO! Alguém já é o host. Vou virar Cliente.
-                    console.log("Sala cheia, virando cliente...");
-                    peer.destroy(); // Mata a tentativa falha
-                    becomeClient(id, roomNameDisplay);
-                } else {
-                    alert("Erro PeerJS: " + err.type);
-                }
+                if(err.type === 'unavailable-id') { peer.destroy(); becomeClient(id, roomNameDisplay); }
             });
-
             peer.on('connection', setupConn);
         }
 
         function becomeClient(hostId, roomNameDisplay) {
-            // Cria ID aleatório para não dar conflito
             myID = hostId + "-player-" + Math.floor(Math.random()*9999);
             peer = new Peer(myID);
-
             peer.on('open', () => {
                 isHost = false;
                 document.getElementById('status-net').innerText = "CLIENTE: " + roomNameDisplay;
-                // Conecta no Host
-                const conn = peer.connect(hostId);
-                setupConn(conn);
+                setupConn(peer.connect(hostId));
             });
-
-            peer.on('error', (err) => alert("Erro Cliente: " + err.type));
-            // Clientes também podem receber conexões diretas no futuro (P2P real), mas por enquanto foca no host
             peer.on('connection', setupConn); 
         }
 
         function setupConn(conn) {
             conn.on('open', () => {
                 connections[conn.peer] = conn;
-                // Envia meu nick e posição inicial
-                conn.send({ type: 'hello', nick: myNick, x: 0, y: 0.5, z: 0, senderId: myID });
+                conn.send({ type: 'hello', nick: myNick, x: 0, y: 0.5, z: 0, senderId: myID, scale: isGiant?5:1 });
             });
-
-            conn.on('data', data => {
-                // Se receber dados de alguém
-                handleData(data, conn.peer);
-            });
-
+            conn.on('data', data => handleData(data, conn.peer));
             conn.on('close', () => removePlayer(conn.peer));
         }
 
         function handleData(data, senderPeerId) {
-            // Se sou HOST, preciso repassar isso para todos os outros (RELAY)
             if(isHost) {
-                // Adiciona o ID original de quem enviou para não replicar errado
                 data.senderId = data.senderId || senderPeerId; 
-                broadcast(data, senderPeerId); // Envia para todos MENOS quem mandou
+                broadcast(data, senderPeerId);
             }
-
-            // Processa os dados visualmente
-            if(data.senderId === myID) return; // Não processa meus proprios dados se voltarem
+            if(data.senderId === myID) return;
 
             if(data.type === 'hello' || data.type === 'move') updateRemote(data.senderId, data);
             if(data.type === 'chat') addChatMessage(data.nick, data.text);
             if(data.type === 'kick-all') location.reload();
-        }
-
-        function broadcast(data, ignoreId) {
-            for(let id in connections) {
-                if(connections[id].open && id !== ignoreId) {
-                    connections[id].send(data);
+            
+            // Lógica de Banimento Recebida
+            if(data.type === 'admin-cmd') {
+                const me = myNick.replace("👑 ", "");
+                if(data.target === me) {
+                    if(data.cmd === 'ban-temp') {
+                        localStorage.setItem('nexus_temp_ban', Date.now() + (5 * 60 * 1000));
+                        location.reload();
+                    }
+                    if(data.cmd === 'ban-perm') {
+                        localStorage.setItem('nexus_perm_ban', 'true');
+                        location.reload();
+                    }
                 }
             }
         }
 
-        // --- CHAT ---
+        function broadcast(data, ignoreId) {
+            for(let id in connections) {
+                if(connections[id].open && id !== ignoreId) connections[id].send(data);
+            }
+        }
+
         function sendChat() {
             const input = document.getElementById('chat-input');
             if(!input.value.trim()) return;
             const msg = { type: 'chat', text: input.value, nick: myNick, senderId: myID };
-            
             addChatMessage(myNick, input.value);
-            
-            // Se sou host, mando pra todos. Se sou cliente, mando pro host (que manda pra todos)
             if (isHost) broadcast(msg, null);
-            else {
-                // Envia para o Host (única conexão do cliente)
-                for(let id in connections) connections[id].send(msg); 
-            }
-            
+            else for(let id in connections) connections[id].send(msg);
             input.value = "";
         }
 
@@ -287,7 +324,6 @@
             box.scrollTop = box.scrollHeight;
         }
 
-        // --- ENGINE ---
         function initEngine() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -302,7 +338,10 @@
             animate();
         }
 
-        function jump() { if(isGrounded) { velocityY = 0.25; isGrounded = false; } }
+        function jump() { 
+            if(isFlying) { playerMesh.position.y += 0.5; return; }
+            if(isGrounded) { velocityY = 0.25; isGrounded = false; } 
+        }
 
         function animate() {
             requestAnimationFrame(animate);
@@ -314,16 +353,30 @@
             if(keys.a) { playerMesh.position.x -= moveSpeed; moved = true; }
             if(keys.d) { playerMesh.position.x += moveSpeed; moved = true; }
 
-            velocityY -= 0.012;
-            playerMesh.position.y += velocityY;
-            if(playerMesh.position.y <= 0.5) { playerMesh.position.y = 0.5; velocityY = 0; isGrounded = true; }
+            if(!isFlying) {
+                velocityY -= 0.012;
+                playerMesh.position.y += velocityY;
+                const groundLimit = isGiant ? 2.5 : 0.5;
+                if(playerMesh.position.y <= groundLimit) { playerMesh.position.y = groundLimit; velocityY = 0; isGrounded = true; }
+            } else {
+                isGrounded = false;
+                // No modo voar, o "S" desce se não houver colisão
+                if(keys.s && playerMesh.position.y > 0.5) playerMesh.position.y -= 0.1;
+            }
 
-            camera.position.lerp(new THREE.Vector3(playerMesh.position.x, 5, playerMesh.position.z + 8), 0.1);
+            camera.position.lerp(new THREE.Vector3(playerMesh.position.x, isGiant?15:5, playerMesh.position.z + (isGiant?20:8)), 0.1);
             camera.lookAt(playerMesh.position);
 
-            if(moved || !isGrounded) {
-                const moveData = { type:'move', x:playerMesh.position.x, y:playerMesh.position.y, z:playerMesh.position.z, nick: myNick, senderId: myID };
-                // Se sou Host, mando pra todos. Se sou Cliente, mando pro host.
+            if(moved || !isGrounded || isFlying) {
+                const moveData = { 
+                    type:'move', 
+                    x:playerMesh.position.x, 
+                    y:playerMesh.position.y, 
+                    z:playerMesh.position.z, 
+                    nick: myNick, 
+                    senderId: myID,
+                    scale: isGiant ? 5 : 1
+                };
                 if(isHost) broadcast(moveData, null); 
                 else for(let id in connections) connections[id].send(moveData);
             }
@@ -331,37 +384,33 @@
             for(let id in remotePlayers) {
                 const p = remotePlayers[id];
                 p.mesh.position.lerp(p.targetPos, 0.2);
-                const tempV = p.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)).project(camera);
-                // Correção de visibilidade da tag
-                if(tempV.z < 1 && tempV.x > -1 && tempV.x < 1 && tempV.y > -1 && tempV.y < 1) {
+                const tagOffset = p.mesh.scale.x * 1.2;
+                const tempV = p.mesh.position.clone().add(new THREE.Vector3(0, tagOffset, 0)).project(camera);
+                if(tempV.z < 1) {
                      p.tag.style.left = (tempV.x * .5 + .5) * window.innerWidth + 'px';
                      p.tag.style.top = (tempV.y * -.5 + .5) * window.innerHeight + 'px';
                      p.tag.style.display = 'block';
-                } else {
-                     p.tag.style.display = 'none';
-                }
+                } else { p.tag.style.display = 'none'; }
             }
             renderer.render(scene, camera);
         }
 
         function updateRemote(id, data) {
             if(!remotePlayers[id]) {
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0x00ffff })); // Ciano para outros
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0x00ffff }));
                 scene.add(mesh);
                 const tag = document.createElement('div');
                 tag.className = 'player-tag';
                 tag.innerText = data.nick || "Player";
                 document.body.appendChild(tag);
                 remotePlayers[id] = { mesh, tag, targetPos: new THREE.Vector3(data.x, data.y, data.z) };
-                addChatMessage("SISTEMA", (data.nick || "Alguém") + " entrou.");
             } else {
                 remotePlayers[id].targetPos.set(data.x, data.y, data.z);
+                if(data.scale) remotePlayers[id].mesh.scale.set(data.scale, data.scale, data.scale);
             }
         }
 
         function removePlayer(id) {
-            // Como o ID vem da conexão direta, precisamos achar o ID lógico (senderId) se estiver mapeado, mas vamos tentar direto
-            // Nota: PeerJS usa ids de conexão.
             if(remotePlayers[id]) {
                 scene.remove(remotePlayers[id].mesh);
                 if(remotePlayers[id].tag) document.body.removeChild(remotePlayers[id].tag);
@@ -382,7 +431,7 @@
             document.getElementById('recent-list').innerHTML = list.map(id => `<div style="background:#222; padding:8px; margin-top:5px; font-size:10px; border:1px solid #333; cursor:pointer;" onclick="document.getElementById('room-input').value='${id}'; startMesh()">${id}</div>`).join('');
         }
 
-        function changeSpeed(v) { moveSpeed += v; }
+        function changeSpeed(v) { moveSpeed += v; if(moveSpeed > 2) moveSpeed = 0.2; }
         setupKeyboard();
     </script>
 </body>
