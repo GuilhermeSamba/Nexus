@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS ENGINE - VERSÃO COMPLETA</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        /* ESTILOS ORIGINAIS RESTAURADOS */
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; color: white; user-select: none; touch-action: none; }
+        canvas { display: block; }
+        .hidden { display: none !important; }
+
+        /* TECLADO VIRTUAL CASEIRO */
+        #keyboard-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(10,10,10,0.95); border-top: 2px solid #00ff00; display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; padding: 10px; box-sizing: border-box; z-index: 9999; }
+        .key { background: #222; border: 1px solid #444; color: white; padding: 15px 0; text-align: center; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .key:active { background: #00ff00; color: #000; }
+        .key.wide { grid-column: span 2; background: #333; }
+
+        /* UI DE LOGIN E HUB */
+        .auth-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
+        .auth-card { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid #00ff00; width: 85%; max-width: 320px; text-align: center; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: white; text-align: center; }
+        
+        /* MENU HUB MINIMIZÁVEL */
+        #server-menu { position: absolute; top: 0; left: -300px; width: 280px; height: 100%; background: rgba(5,5,5,0.95); border-right: 2px solid #00ff00; transition: 0.3s; z-index: 7000; padding: 20px; box-sizing: border-box; }
+        #server-menu.open { left: 0; }
+        .menu-toggle { position: absolute; top: 20px; right: -50px; width: 45px; height: 45px; background: #000; border: 1px solid #00ff00; color: #00ff00; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0 5px 5px 0; }
+
+        /* PAINEL ADMIN REAL */
+        #admin-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(255,0,0,0.3); border: 1px solid red; padding: 10px; border-radius: 10px; z-index: 8000; display: flex; gap: 10px; }
+        
+        /* TAGS DE NOME (PLAYER TAGS) */
+        .player-tag { position: absolute; padding: 2px 8px; background: rgba(0,0,0,0.6); color: white; border-radius: 4px; font-size: 12px; white-space: nowrap; pointer-events: none; z-index: 1000; border: 1px solid #00ff00; }
+
+        /* CONTROLES MOBILE */
+        #mobile-controls { position: absolute; bottom: 30px; left: 20px; display: grid; grid-template-columns: repeat(3, 65px); gap: 10px; z-index: 100; }
+        .btn-game { width: 65px; height: 65px; background: rgba(255,255,255,0.1); border: 2px solid #00ff00; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00ff00; }
+        
+        /* CHAT */
+        #chat-box { position: absolute; bottom: 120px; right: 20px; width: 200px; height: 150px; background: rgba(0,0,0,0.5); overflow-y: auto; padding: 5px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="auth-overlay">
+        <div class="auth-card">
+            <h2 style="color:#00ff00">NEXUS LOGIN</h2>
+            <input type="email" id="email-field" placeholder="Seu Gmail" readonly onclick="openKeyboard(this)">
+            <input type="text" id="user-field" placeholder="Nick no Jogo" readonly onclick="openKeyboard(this)">
+            <button onclick="request2FA()">RECEBER CÓDIGO</button>
+        </div>
+    </div>
+
+    <div id="2fa-screen" class="auth-overlay hidden">
+        <div class="auth-card">
+            <h2 style="color:#00ff00">VERIFICAÇÃO</h2>
+            <input type="text" id="2fa-input" placeholder="Código" readonly onclick="openKeyboard(this)">
+            <button onclick="verifyAndStart()">ENTRAR NO NEXUS</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden">
+        <b style="color:red">ADM</b>
+        <button onclick="changeSpeed(0.5)">SPEED+</button>
+        <button onclick="changeSize(2)">GIGANTE</button>
+        <button onclick="broadcast({type:'kick-all'})" style="background:red; color:white;">KICK ALL</button>
+    </div>
+
+    <div id="server-menu">
+        <div class="menu-toggle" onclick="this.parentElement.classList.toggle('open')">☰</div>
+        <h3 style="color:#00ff00">🌐 MUNDOS</h3>
+        <input type="text" id="room-input" placeholder="Nome da Sala" onclick="openKeyboard(this)">
+        <button onclick="setupServer(true)">CRIAR/HOST (10p)</button>
+        <button onclick="setupServer(false)" style="background:#444; color:white; margin-top:5px;">ENTRAR POR ID</button>
+        
+        <div style="margin-top:20px;">
+            <p style="font-size:10px; color:#555;">RECENTES:</p>
+            <div id="recent-list"></div>
+        </div>
+    </div>
+
+    <div id="status-net" style="position:absolute; top:10px; right:10px; font-size:11px; color:#00ff00;">Desconectado</div>
+    <div id="chat-box"></div>
+
+    <div id="mobile-controls" class="hidden">
+        <div style="grid-column: 2" class="btn-game" onpointerdown="keys.w=true" onpointerup="keys.w=false">W</div>
+        <div style="grid-column: 1" class="btn-game" onpointerdown="keys.a=true" onpointerup="keys.a=false">A</div>
+        <div style="grid-column: 2" class="btn-game" onpointerdown="keys.s=true" onpointerup="keys.s=false">S</div>
+        <div style="grid-column: 3" class="btn-game" onpointerdown="keys.d=true" onpointerup="keys.d=false">D</div>
+        <div style="grid-column: 2; margin-top:10px;" class="btn-game" onpointerdown="jump()">PULAR</div>
+    </div>
+
+    <div id="keyboard-overlay" class="hidden"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+
+    <script>
+        // --- VARIÁVEIS GLOBAIS ---
+        let scene, camera, renderer, playerMesh;
+        let peer, hostConn, isHost = false;
+        let isAdmin = false, myNick = "", myEmail = "", myCode = "";
+        let remotePlayers = {};
+        const keys = { w:false, a:false, s:false, d:false };
+        let velocityY = 0, isGrounded = false, moveSpeed = 0.2;
+
+        // --- TECLADO VIRTUAL ---
+        let currentInput = null;
+        function setupKeyboard() {
+            const kb = document.getElementById('keyboard-overlay');
+            const chars = "1234567890QWERTYUIOPASDFGHJKL-ZXCVBNM@._ ".split("");
+            kb.innerHTML = chars.map(c => `<div class="key" onclick="pressKey('${c}')">${c}</div>`).join("");
+            kb.innerHTML += `<div class="key wide" onclick="pressKey('BACK')">APAGAR</div>`;
+            kb.innerHTML += `<div class="key wide" onclick="closeKeyboard()" style="background:#00ff00; color:#000;">OK</div>`;
+        }
+        function openKeyboard(el) { currentInput = el; document.getElementById('keyboard-overlay').classList.remove('hidden'); }
+        function pressKey(c) {
+            if(!currentInput) return;
+            if(c==='BACK') currentInput.value = currentInput.value.slice(0,-1);
+            else currentInput.value += c.toLowerCase();
+        }
+        function closeKeyboard() { document.getElementById('keyboard-overlay').classList.add('hidden'); }
+
+        // --- LOGIN E VERIFICAÇÃO ---
+        emailjs.init("moDwTMHMA3q3OPbuy");
+
+        function request2FA() {
+            myEmail = document.getElementById('email-field').value.trim().toLowerCase();
+            myNick = document.getElementById('user-field').value.trim();
+            if(!myEmail.includes("@") || myNick.length < 2) return alert("Preencha corretamente!");
+            
+            myCode = Math.floor(100000 + Math.random() * 900000).toString();
+            emailjs.send("default_service", "template_axhickg", { to_email: myEmail, code: myCode, user_nick: myNick })
+                .then(() => {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('2fa-screen').classList.remove('hidden');
+                });
+        }
+
+        function verifyAndStart() {
+            if(document.getElementById('2fa-input').value === myCode) {
+                if(myEmail === "luanaaalmeidadesouza@gmail.com") {
+                    isAdmin = true; myNick = "👑 " + myNick;
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                }
+                document.getElementById('2fa-screen').classList.add('hidden');
+                document.getElementById('mobile-controls').classList.remove('hidden');
+                initEngine();
+                updateRecentUI();
+            } else { alert("Código errado!"); }
+        }
+
+        // --- HUB E MULTIPLAYER (SISTEMA DE 10 PESSOAS) ---
+        function setupServer(asHost) {
+            const val = document.getElementById('room-input').value.trim().toLowerCase();
+            if(!val) return alert("Digite o nome da sala!");
+            
+            const ROOM_ID = "NEXUS-V2-" + val;
+            if(asHost) startHost(ROOM_ID); else startClient(ROOM_ID);
+            
+            saveRecent(ROOM_ID);
+            document.getElementById('server-menu').classList.remove('open');
+        }
+
+        function startHost(id) {
+            peer = new Peer(id);
+            peer.on('open', () => {
+                isHost = true;
+                document.getElementById('status-net').innerText = "HOST: " + id;
+            });
+            peer.on('connection', conn => {
+                if(Object.keys(remotePlayers).length >= 10) {
+                    conn.on('open', () => { conn.send({type:'msg', text:'SALA CHEIA!'}); setTimeout(()=>conn.close(), 1000); });
+                    return;
+                }
+                setupConn(conn);
+            });
+        }
+
+        function startClient(id) {
+            peer = new Peer();
+            peer.on('open', () => {
+                hostConn = peer.connect(id);
+                setupConn(hostConn);
+                document.getElementById('status-net').innerText = "CONECTANDO...";
+            });
+        }
+
+        function setupConn(conn) {
+            conn.on('open', () => {
+                document.getElementById('status-net').innerText = "ONLINE";
+                conn.send({ type: 'hello', nick: myNick, isAdmin: isAdmin });
+            });
+            conn.on('data', data => {
+                if(data.type === 'move') updateRemote(conn.peer, data);
+                if(data.type === 'hello') createPlayer(conn.peer, data.nick);
+                if(data.type === 'msg') alert(data.text);
+            });
+        }
+
+        function broadcast(data) {
+            if(isHost) {
+                for(let id in remotePlayers) remotePlayers[id].conn.send(data);
+            } else if(hostConn && hostConn.open) {
+                hostConn.send(data);
+            }
+        }
+
+        // --- ENGINE 3D (FÍSICA E MOVIMENTO RESTAURADOS) ---
+        function initEngine() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            scene.add(new THREE.GridHelper(100, 50, 0x00ff00, 0x222222));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+            playerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: isAdmin ? 0xff0000 : 0x00ff00 }));
+            scene.add(playerMesh);
+            animate();
+        }
+
+        function jump() { if(isGrounded) { velocityY = 0.3; isGrounded = false; } }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(playerMesh) {
+                // Movimento
+                if(keys.w) playerMesh.position.z -= moveSpeed;
+                if(keys.s) playerMesh.position.z += moveSpeed;
+                if(keys.a) playerMesh.position.x -= moveSpeed;
+                if(keys.d) playerMesh.position.x += moveSpeed;
+
+                // Gravidade (Física do seu index.h)
+                velocityY -= 0.015;
+                playerMesh.position.y += velocityY;
+                if(playerMesh.position.y <= 0.5) { playerMesh.position.y = 0.5; velocityY = 0; isGrounded = true; }
+
+                camera.position.lerp(new THREE.Vector3(playerMesh.position.x, 7, playerMesh.position.z + 12), 0.1);
+                camera.lookAt(playerMesh.position);
+
+                broadcast({ type: 'move', x: playerMesh.position.x, y: playerMesh.position.y, z: playerMesh.position.z, nick: myNick });
+                
+                // Atualiza Tags de Nome
+                for(let id in remotePlayers) {
+                    const p = remotePlayers[id];
+                    const v = p.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)).project(camera);
+                    const x = (v.x * .5 + .5) * window.innerWidth;
+                    const y = (v.y * -.5 + .5) * window.innerHeight;
+                    p.tag.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+                }
+            }
+            renderer.render(scene, camera);
+        }
+
+        function createPlayer(id, nick) {
+            if(remotePlayers[id]) return;
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0x00ffff }));
+            const tag = document.createElement('div');
+            tag.className = 'player-tag';
+            tag.innerText = nick;
+            document.body.appendChild(tag);
+            scene.add(mesh);
+            remotePlayers[id] = { mesh, tag, nick };
+        }
+
+        function updateRemote(id, data) {
+            if(!remotePlayers[id]) createPlayer(id, data.nick);
+            remotePlayers[id].mesh.position.set(data.x, data.y, data.z);
+        }
+
+        // --- ADMIN FUNCTIONS ---
+        function changeSpeed(v) { moveSpeed += v; }
+        function changeSize(s) { playerMesh.scale.set(s,s,s); }
+
+        // --- SALAS RECENTES ---
+        function saveRecent(id) {
+            let list = JSON.parse(localStorage.getItem('nexus_rooms') || "[]");
+            if(!list.includes(id)) list.push(id);
+            localStorage.setItem('nexus_rooms', JSON.stringify(list.slice(-5)));
+            updateRecentUI();
+        }
+        function updateRecentUI() {
+            const list = JSON.parse(localStorage.getItem('nexus_rooms') || "[]");
+            document.getElementById('recent-list').innerHTML = list.map(id => 
+                `<div style="padding:5px; background:#222; margin-top:5px; font-size:10px; cursor:pointer;" onclick="startClient('${id}')">${id}</div>`
+            ).join('');
+        }
+
+        setupKeyboard();
+    </script>
+</body>
+</html>
