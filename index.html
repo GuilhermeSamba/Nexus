@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ENGINE - V5 MESH FIXED</title>
+    <title>NEXUS ENGINE - V5 MESH FIXED + DAY & PARKOUR</title>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; color: white; user-select: none; touch-action: none; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #87CEEB; color: white; user-select: none; touch-action: none; }
         canvas { display: block; }
         .hidden { display: none !important; }
 
@@ -17,9 +17,11 @@
         .key.wide { grid-column: span 2; background: #333; }
 
         /* AUTH E HUB */
-        .auth-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
-        .auth-card { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid #00ff00; width: 85%; max-width: 320px; text-align: center; }
+        .auth-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(135, 206, 235, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
+        .auth-card { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid #00ff00; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: white; text-align: center; font-size: 16px; }
+        /* Style para o Color Picker */
+        input[type="color"] { height: 50px; cursor: pointer; padding: 2px; }
         button { width: 100%; padding: 12px; background: #00ff00; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
 
         /* MENU LATERAL */
@@ -53,7 +55,7 @@
 
         /* GAMEPAD */
         #mobile-controls { position: absolute; bottom: 30px; left: 20px; display: grid; grid-template-columns: repeat(3, 65px); gap: 10px; z-index: 100; }
-        .btn-game { width: 65px; height: 65px; background: rgba(255,255,255,0.05); border: 2px solid #00ff00; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00ff00; font-weight: bold; user-select: none; }
+        .btn-game { width: 65px; height: 65px; background: rgba(0,0,0,0.3); border: 2px solid #00ff00; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00ff00; font-weight: bold; user-select: none; backdrop-filter: blur(4px); }
     </style>
 </head>
 <body>
@@ -62,6 +64,10 @@
         <div class="auth-card">
             <h2 style="color:#00ff00; margin-top:0;">NEXUS ENGINE</h2>
             <input type="email" id="email-field" placeholder="Seu Gmail" readonly onclick="openKeyboard(this)">
+            
+            <label style="color:#aaa; font-size:12px; display:block; margin-top:5px;">ESCOLHA A COR DO CUBO</label>
+            <input type="color" id="color-picker" value="#00ff00" title="Escolha a cor do seu jogador">
+
             <input type="text" id="user-field" placeholder="Nick do Jogo" readonly onclick="openKeyboard(this)">
             <button onclick="request2FA()">RECEBER CÓDIGO</button>
             <button onclick="loginAsGuest()" style="margin-top: 10px; background: transparent; border: 1px solid #00ff00; color: #00ff00;">ENTRAR COMO GUEST</button>
@@ -101,7 +107,7 @@
         <div id="recent-list" style="margin-top:20px;"></div>
     </div>
 
-    <div id="status-net" style="position:absolute; top:10px; right:10px; font-size:11px; color:#00ff00; background:rgba(0,0,0,0.5); padding:5px; border:1px solid #00ff00;">Status: Off</div>
+    <div id="status-net" style="position:absolute; top:10px; right:10px; font-size:11px; color:#000; background:rgba(255,255,255,0.5); padding:5px; border:1px solid #00ff00; font-weight:bold;">Status: Off</div>
 
     <div id="mobile-controls" class="hidden">
         <div style="grid-column: 2" class="btn-game" onpointerdown="keys.w=true" onpointerup="keys.w=false">W</div>
@@ -124,16 +130,20 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
         const PREFIX = "NEXUS-MESH-";
-        let scene, camera, renderer, playerMesh;
+        let scene, camera, renderer, playerMesh, controls;
         let peer, connections = {}; 
         let myNick = "", myEmail = "", myCode = "", myID = "";
+        let myColor = "#00ff00"; // Cor padrão
         let remotePlayers = {}; 
         let isHost = false; 
         const keys = { w:false, a:false, s:false, d:false };
         let velocityY = 0, isGrounded = false, moveSpeed = 0.2;
+        let collidableObjects = []; // Para Parkour e Escadas
+        let raycaster = new THREE.Raycaster();
         
         // Atributos ADM
         let isFlying = false;
@@ -173,6 +183,7 @@
             if(checkBan()) return;
             myEmail = document.getElementById('email-field').value.trim().toLowerCase();
             myNick = document.getElementById('user-field').value.trim() || "User";
+            myColor = document.getElementById('color-picker').value; // PEGA A COR
             myCode = Math.floor(100000 + Math.random() * 900000).toString();
             if(myNick === "dev") { myCode="123456"; alert("DEV: 123456"); }
             else { emailjs.send("default_service", "template_axhickg", { to_email: myEmail, code: myCode, user_nick: myNick }); }
@@ -199,6 +210,7 @@
         function loginAsGuest() {
             if(checkBan()) return;
             let inputNick = document.getElementById('user-field').value.trim();
+            myColor = document.getElementById('color-picker').value; // PEGA A COR
             myNick = inputNick || "Guest_" + Math.floor(Math.random() * 9999);
             myEmail = "guest@nexus.local"; 
             document.getElementById('login-screen').classList.add('hidden');
@@ -266,7 +278,8 @@
         function setupConn(conn) {
             conn.on('open', () => {
                 connections[conn.peer] = conn;
-                conn.send({ type: 'hello', nick: myNick, x: 0, y: 0.5, z: 0, senderId: myID, scale: isGiant?5:1 });
+                // ENVIA COR NO HELLO
+                conn.send({ type: 'hello', nick: myNick, x: 0, y: 0.5, z: 0, senderId: myID, scale: isGiant?5:1, color: myColor });
             });
             conn.on('data', data => handleData(data, conn.peer));
             conn.on('close', () => removePlayer(conn.peer));
@@ -324,23 +337,154 @@
             box.scrollTop = box.scrollHeight;
         }
 
+        function createSign(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#aa0000';
+            ctx.fillRect(0,0,512,128);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 80px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 256, 90);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.MeshBasicMaterial({ map: tex });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), mat);
+            return mesh;
+        }
+
         function initEngine() {
             scene = new THREE.Scene();
+            // DIA: Mudar fundo para azul celeste
+            scene.background = new THREE.Color(0x87CEEB); 
+            // Neblina suave
+            scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
-            scene.add(new THREE.GridHelper(100, 50, 0x00ff00, 0x111111));
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            playerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
+            
+            // Iluminação de Dia
+            const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 0.8 );
+            hemiLight.position.set( 0, 20, 0 );
+            scene.add( hemiLight );
+            const dirLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
+            dirLight.position.set( -10, 20, 10 );
+            dirLight.castShadow = true;
+            scene.add( dirLight );
+
+            // CHÃO
+            const planeGeo = new THREE.PlaneGeometry(100, 100);
+            const planeMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Grama
+            const plane = new THREE.Mesh(planeGeo, planeMat);
+            plane.rotation.x = -Math.PI / 2;
+            plane.receiveShadow = true;
+            scene.add(plane);
+            scene.add(new THREE.GridHelper(100, 50, 0x000000, 0x004400));
+            collidableObjects.push(plane);
+
+            // --- PAREDES QUE NINGUÉM PASSA (Limites) ---
+            const wallMat = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.1, transparent: true, side: THREE.DoubleSide });
+            const wallGeo = new THREE.BoxGeometry(100, 50, 1);
+            
+            // Parede Norte
+            const w1 = new THREE.Mesh(wallGeo, wallMat); w1.position.set(0, 25, -50); scene.add(w1);
+            // Parede Sul
+            const w2 = new THREE.Mesh(wallGeo, wallMat); w2.position.set(0, 25, 50); scene.add(w2);
+            // Parede Leste
+            const w3 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 100), wallMat); w3.position.set(50, 25, 0); scene.add(w3);
+            // Parede Oeste
+            const w4 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 100), wallMat); w4.position.set(-50, 25, 0); scene.add(w4);
+            // Adicionar às colisões (embora a lógica principal de paredes seja simples clamp)
+            collidableObjects.push(w1, w2, w3, w4);
+
+            // --- PARKOUR NO AR ---
+            const boxGeo = new THREE.BoxGeometry(2, 0.5, 2);
+            const boxMat = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+            for(let i=0; i<10; i++) {
+                const p = new THREE.Mesh(boxGeo, boxMat);
+                // Posições aleatórias subindo
+                p.position.set(-10 + (i*3), 2 + (i*1.5), -10 + (Math.random()*5));
+                p.castShadow = true;
+                p.receiveShadow = true;
+                scene.add(p);
+                collidableObjects.push(p);
+            }
+
+            // --- ESCADA CIRCULAR ALTA ---
+            const stepGeo = new THREE.BoxGeometry(3, 0.5, 1);
+            const stepMat = new THREE.MeshStandardMaterial({ color: 0xFF00FF });
+            let stairHeight = 0;
+            for(let i=0; i<80; i++) {
+                const step = new THREE.Mesh(stepGeo, stepMat);
+                const angle = i * 0.3; 
+                const radius = 8;
+                step.position.set(Math.cos(angle) * radius + 20, 1 + (i * 0.8), Math.sin(angle) * radius + 20);
+                step.rotation.y = -angle;
+                step.castShadow = true;
+                step.receiveShadow = true;
+                scene.add(step);
+                collidableObjects.push(step);
+                stairHeight = step.position.y;
+                
+                // Placa no final
+                if(i === 79) {
+                    const sign = createSign("SAI DAQUI");
+                    sign.position.set(step.position.x, step.position.y + 3, step.position.z);
+                    sign.lookAt(0, step.position.y + 3, 0); // Olha pro centro
+                    scene.add(sign);
+                }
+            }
+
+            // PLAYER
+            playerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: myColor }));
             playerMesh.position.y = 0.5;
+            playerMesh.castShadow = true;
             scene.add(playerMesh);
+
+            // CONTROLES DE CÂMERA (ORBIT)
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = false;
+            controls.minDistance = 3;
+            controls.maxDistance = 20;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05; // Não deixa ir abaixo do chão
+            
             animate();
         }
 
         function jump() { 
-            if(isFlying) { playerMesh.position.y += 0.5; return; }
-            if(isGrounded) { velocityY = 0.25; isGrounded = false; } 
+            if(isFlying) { velocityY = 0.5; return; }
+            if(isGrounded) { velocityY = 0.35; isGrounded = false; } 
+        }
+
+        function checkCollisions() {
+            // Limites do mapa (Paredes inquebráveis)
+            if(playerMesh.position.x > 49) playerMesh.position.x = 49;
+            if(playerMesh.position.x < -49) playerMesh.position.x = -49;
+            if(playerMesh.position.z > 49) playerMesh.position.z = 49;
+            if(playerMesh.position.z < -49) playerMesh.position.z = -49;
+
+            // Raio para baixo para detectar chão/plataformas
+            raycaster.set(playerMesh.position, new THREE.Vector3(0, -1, 0));
+            const intersects = raycaster.intersectObjects(collidableObjects);
+            
+            // Distância do centro do player até o pé é 0.5. Tolerância pequena.
+            if (intersects.length > 0 && intersects[0].distance < 0.6 + velocityY) {
+                 // Tocou em algo
+                 if(velocityY <= 0) {
+                     isGrounded = true;
+                     velocityY = 0;
+                     // Ajustar altura para ficar em cima do objeto
+                     playerMesh.position.y = intersects[0].point.y + 0.5;
+                 }
+            } else {
+                isGrounded = false;
+            }
         }
 
         function animate() {
@@ -348,24 +492,38 @@
             if(!playerMesh) return;
 
             let moved = false;
-            if(keys.w) { playerMesh.position.z -= moveSpeed; moved = true; }
-            if(keys.s) { playerMesh.position.z += moveSpeed; moved = true; }
-            if(keys.a) { playerMesh.position.x -= moveSpeed; moved = true; }
-            if(keys.d) { playerMesh.position.x += moveSpeed; moved = true; }
+            
+            // Controle relativo à câmera
+            let forward = new THREE.Vector3();
+            camera.getWorldDirection(forward);
+            forward.y = 0; 
+            forward.normalize();
+            let right = new THREE.Vector3();
+            right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize(); // Correção do vetor right
+
+            if(keys.w) { playerMesh.position.add(forward.multiplyScalar(moveSpeed)); moved = true; }
+            if(keys.s) { playerMesh.position.add(forward.multiplyScalar(-moveSpeed)); moved = true; }
+            if(keys.a) { playerMesh.position.add(right.multiplyScalar(-moveSpeed)); moved = true; } // A vai pra esquerda
+            if(keys.d) { playerMesh.position.add(right.multiplyScalar(moveSpeed)); moved = true; } // D vai pra direita
 
             if(!isFlying) {
-                velocityY -= 0.012;
+                velocityY -= 0.015; // Gravidade
                 playerMesh.position.y += velocityY;
-                const groundLimit = isGiant ? 2.5 : 0.5;
-                if(playerMesh.position.y <= groundLimit) { playerMesh.position.y = groundLimit; velocityY = 0; isGrounded = true; }
+                checkCollisions(); // Checa chão e parkour
+                
+                // Morte por queda (reset)
+                if(playerMesh.position.y < -10) {
+                    playerMesh.position.set(0, 10, 0);
+                    velocityY = 0;
+                }
             } else {
-                isGrounded = false;
-                // No modo voar, o "S" desce se não houver colisão
-                if(keys.s && playerMesh.position.y > 0.5) playerMesh.position.y -= 0.1;
+                playerMesh.position.y += velocityY;
+                velocityY *= 0.9; // Desacelera no ar se voando
             }
 
-            camera.position.lerp(new THREE.Vector3(playerMesh.position.x, isGiant?15:5, playerMesh.position.z + (isGiant?20:8)), 0.1);
-            camera.lookAt(playerMesh.position);
+            // Atualiza câmera
+            controls.target.copy(playerMesh.position);
+            controls.update();
 
             if(moved || !isGrounded || isFlying) {
                 const moveData = { 
@@ -375,7 +533,8 @@
                     z:playerMesh.position.z, 
                     nick: myNick, 
                     senderId: myID,
-                    scale: isGiant ? 5 : 1
+                    scale: isGiant ? 5 : 1,
+                    color: myColor
                 };
                 if(isHost) broadcast(moveData, null); 
                 else for(let id in connections) connections[id].send(moveData);
@@ -397,7 +556,10 @@
 
         function updateRemote(id, data) {
             if(!remotePlayers[id]) {
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0x00ffff }));
+                // USA A COR RECEBIDA OU PADRÃO
+                const pColor = data.color || 0x00ffff;
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: pColor }));
+                mesh.castShadow = true;
                 scene.add(mesh);
                 const tag = document.createElement('div');
                 tag.className = 'player-tag';
