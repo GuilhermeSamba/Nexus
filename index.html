@@ -25,11 +25,42 @@
         /* ALERTA */
         #weapon-alert { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); color: red; font-weight: bold; font-size: 16px; text-shadow: 2px 2px 0 #000; display: none; pointer-events: none; }
 
-        /* TECLADO */
-        #keyboard-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(10,10,10,0.98); border-top: 3px solid #00ff00; display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; padding: 10px; box-sizing: border-box; z-index: 9999; }
-        .key { background: #1a1a1a; border: 1px solid #333; color: white; padding: 15px 0; text-align: center; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .key:active { background: #00ff00; color: #000; }
+        /* TECLADO VIRTUAL CUSTOMIZADO */
+        #keyboard-overlay { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background: rgba(15,15,15,0.98); 
+            border-top: 3px solid #00ff00; 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 4px; 
+            padding: 8px; 
+            box-sizing: border-box; 
+            z-index: 10000; 
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+        }
+        .key { 
+            background: #252525; 
+            border: 1px solid #444; 
+            color: white; 
+            padding: 12px 0; 
+            text-align: center; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 16px; 
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.1s;
+        }
+        .key:active { background: #00ff00; color: #000; transform: scale(0.95); }
         .key.wide { grid-column: span 2; background: #333; }
+        .key.space { grid-column: span 4; }
+        .key.ok { background: #00ff00; color: #000; grid-column: span 2; }
 
         /* AUTH E HUB */
         .auth-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(135, 206, 235, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
@@ -191,17 +222,56 @@
             document.getElementById('chat-toggle-btn').innerText = container.classList.contains('minimized') ? "[CHAT]" : "[-]";
         }
 
-        // Teclado
+        // --- SISTEMA DE TECLADO VIRTUAL MELHORADO ---
         let currentInput = null;
         function setupKeyboard() {
             const kb = document.getElementById('keyboard-overlay');
-            const chars = "1234567890QWERTYUIOPASDFGHJKL-ZXCVBNM@._ ".split("");
-            kb.innerHTML = chars.map(c => `<div class="key" onclick="pressKey('${c}')">${c}</div>`).join("");
-            kb.innerHTML += `<div class="key wide" onclick="pressKey('BACK')">←</div><div class="key wide" onclick="closeKeyboard()" style="background:#00ff00; color:#000;">OK</div>`;
+            const rows = [
+                "1234567890",
+                "QWERTYUIOP",
+                "ASDFGHJKL",
+                "ZXCVBNM@._"
+            ];
+            
+            let html = "";
+            rows.forEach(row => {
+                html += row.split("").map(c => `<div class="key" onclick="pressKey('${c}')">${c}</div>`).join("");
+            });
+
+            // Teclas de controle
+            html += `<div class="key wide" onclick="pressKey('BACK')">BACK</div>`;
+            html += `<div class="key space" onclick="pressKey(' ')">ESPAÇO</div>`;
+            html += `<div class="key ok" onclick="closeKeyboard()">OK</div>`;
+            
+            kb.innerHTML = html;
         }
-        function openKeyboard(el) { currentInput = el; document.getElementById('keyboard-overlay').classList.remove('hidden'); }
-        function pressKey(c) { if(!currentInput) return; if(c==='BACK') currentInput.value = currentInput.value.slice(0,-1); else currentInput.value += c.toLowerCase(); }
-        function closeKeyboard() { document.getElementById('keyboard-overlay').classList.add('hidden'); if(currentInput?.id==='chat-input') sendChat(); }
+
+        function openKeyboard(el) { 
+            currentInput = el; 
+            document.getElementById('keyboard-overlay').classList.remove('hidden'); 
+            // Faz scroll automático para o input não ficar atrás do teclado se necessário
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function pressKey(c) { 
+            if(!currentInput) return; 
+            if(c === 'BACK') {
+                currentInput.value = currentInput.value.slice(0, -1);
+            } else {
+                // Mantém minúsculo se for email, senão normal
+                let val = (currentInput.type === 'email') ? c.toLowerCase() : c;
+                currentInput.value += val;
+            }
+        }
+
+        function closeKeyboard() { 
+            document.getElementById('keyboard-overlay').classList.add('hidden'); 
+            if(currentInput?.id === 'chat-input' && currentInput.value.trim() !== "") {
+                sendChat();
+            }
+            currentInput = null;
+        }
+        // --------------------------------------------
 
         // Login System
         emailjs.init("moDwTMHMA3q3OPbuy");
@@ -705,7 +775,7 @@
             const w4 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 150), wallMat); w4.position.set(-75, 25, 0); scene.add(w4);
             collidableObjects.push(w1, w2, w3, w4);
 
-            // --- ARENA PVP (NO CHÃO) ---
+            // --- ARENA PVP ---
             const arenaGeo = new THREE.BoxGeometry(20, 0.2, 20);
             const arenaMat = new THREE.MeshStandardMaterial({ color: 0x880000 }); 
             const arena = new THREE.Mesh(arenaGeo, arenaMat);
@@ -739,7 +809,6 @@
             const stepGeo = new THREE.BoxGeometry(3, 0.5, 1);
             const stepMat = new THREE.MeshStandardMaterial({ color: 0xFF00FF });
             let lastX = 0, lastY = 0, lastZ = 0;
-            
             for(let i=0; i<80; i++) {
                 const step = new THREE.Mesh(stepGeo, stepMat);
                 const angle = i * 0.3; 
@@ -747,33 +816,21 @@
                 lastX = Math.cos(angle) * radius + 20;
                 lastY = 1 + (i * 0.8);
                 lastZ = Math.sin(angle) * radius + 20;
-                
                 step.position.set(lastX, lastY, lastZ);
                 step.rotation.y = -angle;
                 scene.add(step);
                 collidableObjects.push(step);
             }
-
             const finalRoomY = lastY + 0.5;
             const floorFinal = new THREE.Mesh(new THREE.BoxGeometry(15, 1, 15), new THREE.MeshStandardMaterial({color: 0xeeeeee}));
             floorFinal.position.set(lastX, finalRoomY, lastZ);
             scene.add(floorFinal);
             collidableObjects.push(floorFinal);
 
-            const sofaFinal = createSofa();
-            sofaFinal.position.set(lastX, finalRoomY + 0.5, lastZ - 3);
-            scene.add(sofaFinal);
-
-            const textFinal = createSign("VOCÊ CHEGOU AO FINAL :)", "#008800");
-            textFinal.position.set(lastX, finalRoomY + 4, lastZ);
-            scene.add(textFinal);
-
-
             // PLAYER
             playerMesh = createHumanoid(myColor, mySkin);
             playerMesh.position.y = 0.5;
             playerMesh.castShadow = true;
-            
             playerLimbs = playerMesh.userData;
 
             mySword = createWeaponMesh('sword');
@@ -808,38 +865,27 @@
             if(isGrounded) { velocityY = 0.35; isGrounded = false; } 
         }
 
-        // --- CORREÇÃO DE COLISÃO AQUI ---
         function checkCollisions() {
             if(playerMesh.position.x > 74) playerMesh.position.x = 74;
             if(playerMesh.position.x < -74) playerMesh.position.x = -74;
             if(playerMesh.position.z > 74) playerMesh.position.z = 74;
             if(playerMesh.position.z < -74) playerMesh.position.z = -74;
 
-            // FIX: Levanta a origem do raio para o "umbigo" (y+0.5)
-            // Assim o raio sempre dispara de cima para baixo, mesmo se os pés entrarem um pouco no chão
             const rayOrigin = playerMesh.position.clone();
             rayOrigin.y += 0.5; 
-
             raycaster.set(rayOrigin, new THREE.Vector3(0, -1, 0));
             const intersects = raycaster.intersectObjects(collidableObjects, true);
             
-            // Distância esperada: 0.5 (metade da altura) + offset
             if (intersects.length > 0) {
                  const dist = intersects[0].distance;
-                 // Se a distancia for menor que (Altura + Buffer + Velocidade atual)
                  if(dist < 0.6 + Math.abs(velocityY)) {
                      if(velocityY <= 0) {
                          isGrounded = true;
                          velocityY = 0;
-                         // Pousa exatamente no ponto de contato
                          playerMesh.position.y = intersects[0].point.y; 
                      }
-                 } else {
-                     isGrounded = false;
-                 }
-            } else {
-                isGrounded = false;
-            }
+                 } else { isGrounded = false; }
+            } else { isGrounded = false; }
         }
 
         function animate() {
@@ -854,10 +900,10 @@
             let right = new THREE.Vector3();
             right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize(); 
 
-            if(keys.w) { playerMesh.position.add(forward.multiplyScalar(moveSpeed)); moved = true; }
-            if(keys.s) { playerMesh.position.add(forward.multiplyScalar(-moveSpeed)); moved = true; }
-            if(keys.a) { playerMesh.position.add(right.multiplyScalar(-moveSpeed)); moved = true; } 
-            if(keys.d) { playerMesh.position.add(right.multiplyScalar(moveSpeed)); moved = true; } 
+            if(keys.w) { playerMesh.position.add(forward.clone().multiplyScalar(moveSpeed)); moved = true; }
+            if(keys.s) { playerMesh.position.add(forward.clone().multiplyScalar(-moveSpeed)); moved = true; }
+            if(keys.a) { playerMesh.position.add(right.clone().multiplyScalar(-moveSpeed)); moved = true; } 
+            if(keys.d) { playerMesh.position.add(right.clone().multiplyScalar(moveSpeed)); moved = true; } 
 
             if(moved) {
                 playerMesh.rotation.y = Math.atan2(forward.x, forward.z); 
@@ -894,11 +940,8 @@
             controls.target.copy(playerMesh.position);
             controls.update();
 
-            const dx = playerMesh.position.x - (-40);
-            const dz = playerMesh.position.z - 0;
-            const dist = Math.sqrt(dx*dx + dz*dz);
-            
-            if(dist < 10) {
+            const distArena = playerMesh.position.distanceTo(new THREE.Vector3(-40, 0, 0));
+            if(distArena < 10) {
                    if(!inArena) { inArena = true; updateWeaponStatus(); }
             } else {
                    if(inArena) { inArena = false; updateWeaponStatus(); }
@@ -906,19 +949,10 @@
 
             if(moved || !isGrounded || isFlying || inArena || hasGun) {
                 const wpState = hasGun ? 2 : (inArena ? 1 : 0);
-                
                 const moveData = { 
-                    type:'move', 
-                    x:playerMesh.position.x, 
-                    y:playerMesh.position.y, 
-                    z:playerMesh.position.z, 
-                    ry: playerMesh.rotation.y, 
-                    nick: myNick, 
-                    senderId: myID,
-                    scale: isGiant ? 5 : 1,
-                    color: myColor,
-                    skin: mySkin,
-                    wp: wpState 
+                    type:'move', x:playerMesh.position.x, y:playerMesh.position.y, z:playerMesh.position.z, 
+                    ry: playerMesh.rotation.y, nick: myNick, senderId: myID,
+                    scale: isGiant ? 5 : 1, color: myColor, skin: mySkin, wp: wpState 
                 };
                 if(isHost) broadcast(moveData, null); 
                 else for(let id in connections) connections[id].send(moveData);
@@ -927,14 +961,12 @@
             for(let id in remotePlayers) {
                 const p = remotePlayers[id];
                 p.mesh.position.lerp(p.targetPos, 0.2);
-                if(p.targetRot !== undefined) {
-                    p.mesh.rotation.y = p.targetRot; 
-                }
+                if(p.targetRot !== undefined) p.mesh.rotation.y = p.targetRot; 
                 
                 const speed = p.mesh.position.distanceTo(p.targetPos);
                 if(speed > 0.01) {
                     const rTime = Date.now() * 0.01;
-                     if(p.limbs && p.limbs.leftArm) {
+                    if(p.limbs && p.limbs.leftArm) {
                         p.limbs.leftArm.rotation.x = Math.sin(rTime) * 0.5;
                         p.limbs.rightArm.rotation.x = Math.sin(rTime + Math.PI) * 0.5;
                         p.limbs.leftLeg.rotation.x = Math.sin(rTime + Math.PI) * 0.5;
@@ -950,20 +982,17 @@
                      p.tag.style.display = 'block';
                 } else { p.tag.style.display = 'none'; }
             }
-            renderer.render(scene, camera); camera);
+            renderer.render(scene, camera);
         }
 
         function updateRemote(id, data) {
             if(!remotePlayers[id]) {
                 const pColor = data.color || 0x00ffff;
                 const pSkin = data.skin || "casual";
-                
                 const mesh = createHumanoid(pColor, pSkin);
-                
                 const rSword = createWeaponMesh('sword');
                 const rGun = createWeaponMesh('gun');
-                rSword.visible = false;
-                rGun.visible = false;
+                rSword.visible = false; rGun.visible = false;
 
                 if(mesh.userData.rightArm) {
                     mesh.userData.rightArm.add(rSword);
@@ -980,19 +1009,13 @@
                 document.body.appendChild(tag);
                 
                 remotePlayers[id] = { 
-                    mesh, tag, 
-                    targetPos: new THREE.Vector3(data.x, data.y, data.z),
-                    targetRot: 0, 
-                    nick: data.nick,
-                    sword: rSword,
-                    gun: rGun,
-                    limbs: mesh.userData
+                    mesh, tag, targetPos: new THREE.Vector3(data.x, data.y, data.z),
+                    targetRot: 0, nick: data.nick, sword: rSword, gun: rGun, limbs: mesh.userData
                 };
             } else {
                 remotePlayers[id].targetPos.set(data.x, data.y, data.z);
                 if(data.ry !== undefined) remotePlayers[id].targetRot = data.ry;
                 if(data.scale) remotePlayers[id].mesh.scale.set(data.scale, data.scale, data.scale);
-                
                 const p = remotePlayers[id];
                 if(data.wp === 2) { p.sword.visible=false; p.gun.visible=true; }
                 else if(data.wp === 1) { p.sword.visible=true; p.gun.visible=false; }
@@ -1025,4 +1048,3 @@
     </script>
 </body>
 </html>
-        }
