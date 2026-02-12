@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ENGINE - V7 WEAPONS UPDATE</title>
+    <title>NEXUS ENGINE - V8 HUMAN UPDATE</title>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
@@ -19,13 +19,13 @@
         #player-list-title { color: #00ff00; border-bottom: 1px solid #444; margin-bottom: 5px; font-weight: bold; text-align: center; }
         .p-item { margin-bottom: 2px; }
 
-        /* MIRA (CROSSHAIR) */
+        /* MIRA */
         #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: rgba(255, 255, 255, 0.5); border: 1px solid black; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 300; }
 
-        /* ALERTA DE ARMA/PVP */
+        /* ALERTA */
         #weapon-alert { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); color: red; font-weight: bold; font-size: 16px; text-shadow: 2px 2px 0 #000; display: none; pointer-events: none; }
 
-        /* TECLADO VIRTUAL */
+        /* TECLADO */
         #keyboard-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(10,10,10,0.98); border-top: 3px solid #00ff00; display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; padding: 10px; box-sizing: border-box; z-index: 9999; }
         .key { background: #1a1a1a; border: 1px solid #333; color: white; padding: 15px 0; text-align: center; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px; }
         .key:active { background: #00ff00; color: #000; }
@@ -34,29 +34,28 @@
         /* AUTH E HUB */
         .auth-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(135, 206, 235, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
         .auth-card { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid #00ff00; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: white; text-align: center; font-size: 16px; }
+        input, select { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: white; text-align: center; font-size: 16px; }
         input[type="color"] { height: 50px; cursor: pointer; padding: 2px; }
-        button { width: 100%; padding: 12px; background: #00ff00; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
+        button { width: 100%; padding: 12px; background: #00ff00; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; margin-top: 5px; }
 
         /* MENU LATERAL */
         #server-menu { position: absolute; top: 0; left: -300px; width: 280px; height: 100%; background: rgba(5,5,5,0.95); border-right: 2px solid #00ff00; transition: 0.3s; z-index: 7000; padding: 20px; box-sizing: border-box; }
         #server-menu.open { left: 0; }
         .menu-toggle { position: absolute; top: 20px; right: -55px; width: 50px; height: 50px; background: #000; border: 2px solid #00ff00; color: #00ff00; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0 10px 10px 0; font-size: 24px; }
 
-        /* CHAT SYSTEM */
+        /* CHAT */
         #chat-container { position: absolute; bottom: 120px; left: 20px; width: 300px; height: 200px; z-index: 6000; display: flex; flex-direction: column; pointer-events: none; transition: 0.3s; }
         #chat-toggle-btn { width: fit-content; padding: 2px 10px; background: rgba(0,0,0,0.8); border: 1px solid #00ff00; color: #00ff00; font-size: 10px; cursor: pointer; margin-bottom: 2px; pointer-events: auto; border-radius: 4px 4px 0 0; font-weight: bold; }
         #chat-messages { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border-radius: 0 8px 8px 8px; padding: 10px; margin-bottom: 5px; font-size: 12px; text-shadow: 1px 1px 0 #000; pointer-events: auto; }
         .chat-line { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px; }
         .chat-nick { color: #00ff00; font-weight: bold; margin-right: 5px; }
-        
         #chat-input-area { display: flex; gap: 5px; pointer-events: auto; }
         #chat-input { flex: 1; background: rgba(0,0,0,0.8); border: 1px solid #333; color: white; padding: 8px; border-radius: 4px; font-size: 12px; }
         #btn-send-chat { background: #00ff00; border: none; padding: 0 15px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
         #chat-container.minimized { height: 30px; width: auto; }
         #chat-container.minimized #chat-messages, #chat-container.minimized #chat-input-area { display: none !important; }
 
-        /* ADMIN PANEL */
+        /* ADMIN */
         #admin-panel { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(20,0,0,0.9); border: 2px solid red; padding: 10px; border-radius: 12px; z-index: 8000; display: flex; flex-direction: column; gap: 8px; align-items: center; min-width: 220px; }
         .admin-row { display: flex; gap: 5px; width: 100%; justify-content: center; }
         .admin-btn { background: #440000; color: white; border: 1px solid red; font-size: 10px; padding: 5px; cursor: pointer; border-radius: 4px; flex: 1; }
@@ -66,23 +65,32 @@
         /* TAGS */
         .player-tag { position: absolute; padding: 2px 8px; background: rgba(0,0,0,0.7); color: #00ff00; border: 1px solid #00ff00; border-radius: 4px; font-size: 11px; pointer-events: none; transform: translate(-50%, -100%); white-space: nowrap; }
 
-        /* GAMEPAD */
+        /* MOBILE CONTROLS */
         #mobile-controls { position: absolute; bottom: 30px; left: 20px; display: grid; grid-template-columns: repeat(3, 65px); gap: 10px; z-index: 100; }
         .btn-game { width: 65px; height: 65px; background: rgba(0,0,0,0.3); border: 2px solid #00ff00; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00ff00; font-weight: bold; user-select: none; backdrop-filter: blur(4px); }
         .btn-game:active { background: rgba(0,255,0,0.3); }
+
+        #logout-btn { background: red; color: white; border: 1px solid #fff; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div id="login-screen" class="auth-overlay">
         <div class="auth-card">
-            <h2 style="color:#00ff00; margin-top:0;">NEXUS ENGINE</h2>
+            <h2 style="color:#00ff00; margin-top:0;">NEXUS HUMAN</h2>
             <input type="email" id="email-field" placeholder="Seu Gmail" readonly onclick="openKeyboard(this)">
-            <label style="color:#aaa; font-size:12px; display:block; margin-top:5px;">ESCOLHA A COR DO CUBO</label>
+            <label style="color:#aaa; font-size:12px; display:block; margin-top:5px;">COR DO CORPO</label>
             <input type="color" id="color-picker" value="#00ff00">
+            <label style="color:#aaa; font-size:12px; display:block; margin-top:5px;">ROUPA / SKIN</label>
+            <select id="skin-select" style="background:#222; color:white;">
+                <option value="casual">Casual (Preto)</option>
+                <option value="suit">Terno (Azul Escuro)</option>
+                <option value="military">Militar (Verde Oliva)</option>
+                <option value="neon">Neon Cyber</option>
+            </select>
             <input type="text" id="user-field" placeholder="Nick do Jogo" readonly onclick="openKeyboard(this)">
             <button onclick="request2FA()">RECEBER CÓDIGO</button>
-            <button onclick="loginAsGuest()" style="margin-top: 10px; background: transparent; border: 1px solid #00ff00; color: #00ff00;">ENTRAR COMO GUEST</button>
+            <button onclick="loginAsGuest()" style="background: transparent; border: 1px solid #00ff00; color: #00ff00;">ENTRAR COMO GUEST</button>
         </div>
     </div>
 
@@ -127,6 +135,7 @@
         <h3 style="color:#00ff00; margin-top:0;">🌐 MUNDOS P2P</h3>
         <input type="text" id="room-input" placeholder="ID da Sala (ex: sala1)" onclick="openKeyboard(this)">
         <button onclick="startMesh()">CONECTAR AO MUNDO</button>
+        <button id="logout-btn" onclick="doLogout()">SAIR (LOGOUT)</button>
         <div id="recent-list" style="margin-top:20px;"></div>
     </div>
 
@@ -155,6 +164,7 @@
         let peer, connections = {}; 
         let myNick = "", myEmail = "", myCode = "", myID = "";
         let myColor = "#00ff00";
+        let mySkin = "casual"; // Skin selecionada
         let remotePlayers = {}; 
         let isHost = false; 
         const keys = { w:false, a:false, s:false, d:false };
@@ -163,6 +173,9 @@
         let raycaster = new THREE.Raycaster();
         let combatRaycaster = new THREE.Raycaster();
         
+        // Referências para animação
+        let playerLimbs = { leftArm: null, rightArm: null, leftLeg: null, rightLeg: null };
+
         // Armas Visuais
         let mySword, myGun;
 
@@ -193,8 +206,38 @@
         function pressKey(c) { if(!currentInput) return; if(c==='BACK') currentInput.value = currentInput.value.slice(0,-1); else currentInput.value += c.toLowerCase(); }
         function closeKeyboard() { document.getElementById('keyboard-overlay').classList.add('hidden'); if(currentInput?.id==='chat-input') sendChat(); }
 
-        // Login
+        // Login System
         emailjs.init("moDwTMHMA3q3OPbuy");
+
+        window.onload = function() {
+            const savedData = localStorage.getItem('nexus_auth_v2');
+            if(savedData) {
+                const data = JSON.parse(savedData);
+                myEmail = data.email;
+                myNick = data.nick;
+                myColor = data.color;
+                mySkin = data.skin || "casual";
+                
+                // Preencher campos só pra visual
+                document.getElementById('email-field').value = myEmail;
+                document.getElementById('user-field').value = myNick;
+                document.getElementById('color-picker').value = myColor;
+                document.getElementById('skin-select').value = mySkin;
+
+                // Auto-login
+                if(myEmail === "luanaaalmeidadesouza@gmail.com") {
+                    myNick = "👑 " + myNick;
+                    isAdmin = true;
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                }
+                startGameFlow();
+            }
+        };
+
+        function doLogout() {
+            localStorage.removeItem('nexus_auth_v2');
+            location.reload();
+        }
         
         function checkBan() {
             const permBan = localStorage.getItem('nexus_perm_ban');
@@ -209,6 +252,8 @@
             myEmail = document.getElementById('email-field').value.trim().toLowerCase();
             myNick = document.getElementById('user-field').value.trim() || "User";
             myColor = document.getElementById('color-picker').value;
+            mySkin = document.getElementById('skin-select').value;
+
             myCode = Math.floor(100000 + Math.random() * 900000).toString();
             if(myNick === "dev") { myCode="123456"; alert("DEV: 123456"); }
             else { emailjs.send("default_service", "template_axhickg", { to_email: myEmail, code: myCode, user_nick: myNick }); }
@@ -218,6 +263,11 @@
 
         function verifyAndStart() {
             if(document.getElementById('2fa-input').value === myCode) {
+                // Salvar login
+                localStorage.setItem('nexus_auth_v2', JSON.stringify({
+                    email: myEmail, nick: myNick, color: myColor, skin: mySkin
+                }));
+
                 if(myEmail === "luanaaalmeidadesouza@gmail.com") {
                     myNick = "👑 " + myNick;
                     isAdmin = true;
@@ -231,6 +281,7 @@
             if(checkBan()) return;
             let inputNick = document.getElementById('user-field').value.trim();
             myColor = document.getElementById('color-picker').value;
+            mySkin = document.getElementById('skin-select').value;
             myNick = inputNick || "Guest_" + Math.floor(Math.random() * 9999);
             startGameFlow();
         }
@@ -246,7 +297,6 @@
             initEngine();
             updateRecentUI();
             
-            // AUTOMATICAMENTE ENTRA NA ROOM1
             document.getElementById('room-input').value = "room1";
             startMesh();
         }
@@ -281,7 +331,7 @@
         // --- SISTEMA DE COMBATE & VISUAL ---
         function updateWeaponStatus() {
             const alertBox = document.getElementById('weapon-alert');
-            // Controle de visibilidade das armas locais
+            // Controle de visibilidade
             if (mySword && myGun) {
                 if(hasGun) {
                     mySword.visible = false;
@@ -296,8 +346,9 @@
             }
 
             if(hasGun) {
-                alertBox.innerText = "ARMA EQUIPADA (ADM)";
+                alertBox.innerText = "ARMA EQUIPADA (ADM) - LETAL";
                 alertBox.style.display = 'block';
+                alertBox.style.color = "red";
             } else if(inArena) {
                 alertBox.innerText = "MODO PVP: ESPADA EQUIPADA";
                 alertBox.style.display = 'block';
@@ -312,33 +363,53 @@
 
             combatRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             
+            // Coletar meshes dos outros players (o grupo inteiro)
             const targets = [];
             for(let id in remotePlayers) {
-                targets.push(remotePlayers[id].mesh);
+                targets.push(remotePlayers[id].mesh); // Verifica colisão com o grupo principal
             }
 
-            const range = hasGun ? 100 : 5; 
-            const intersects = combatRaycaster.intersectObjects(targets);
+            const range = hasGun ? 200 : 5; // Arma ADM tem longo alcance
+            const intersects = combatRaycaster.intersectObjects(targets, true); // true para recursivo (pegar filhos do grupo)
 
             if(intersects.length > 0 && intersects[0].distance <= range) {
-                const hitMesh = intersects[0].object;
+                // Encontrar a raiz do objeto atingido
+                let hitObj = intersects[0].object;
+                while(hitObj.parent && hitObj.parent.type !== "Scene") {
+                    hitObj = hitObj.parent;
+                }
+
                 for(let id in remotePlayers) {
-                    if(remotePlayers[id].mesh === hitMesh) {
+                    if(remotePlayers[id].mesh === hitObj) {
                         showHitEffect(intersects[0].point);
                         const dmgData = { type: 'damage', targetId: id, damage: 100, shooter: myNick };
-                        if(isHost) {
-                            const conn = connections[id];
-                            if(conn) conn.send(dmgData);
+                        
+                        if(hasGun) {
+                            // Dano garantido da arma ADM
+                            if(isHost) {
+                                const conn = connections[id];
+                                if(conn) conn.send(dmgData);
+                            } else {
+                                broadcast(dmgData); 
+                            }
+                            addChatMessage("COMBATE", `TIRO LASER EM ${remotePlayers[id].nick}!`);
                         } else {
-                            broadcast(dmgData); 
+                            // Espada (já existente)
+                            if(isHost) {
+                                const conn = connections[id];
+                                if(conn) conn.send(dmgData);
+                            } else {
+                                broadcast(dmgData); 
+                            }
+                            addChatMessage("COMBATE", `Espadada em ${remotePlayers[id].nick}!`);
                         }
-                        addChatMessage("COMBATE", `Você acertou ${remotePlayers[id].nick}!`);
                         break;
                     }
                 }
-            } else {
-                if(hasGun) showLaser(combatRaycaster.ray);
-            }
+            } 
+            
+            // Efeito visual do tiro sempre aparece se tiver arma
+            if(hasGun) showLaser(combatRaycaster.ray);
         }
 
         function showHitEffect(point) {
@@ -351,14 +422,22 @@
         }
 
         function showLaser(ray) {
-            const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+            const material = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
             const points = [];
-            points.push(playerMesh.position.clone().add(new THREE.Vector3(0,0.5,0))); 
-            points.push(ray.at(50, new THREE.Vector3())); 
+            
+            // Posição de origem (arma)
+            const startPos = playerMesh.position.clone().add(new THREE.Vector3(0.5, 0.5, 0).applyQuaternion(playerMesh.quaternion));
+            points.push(startPos);
+            
+            // Ponto final (longe)
+            const endPoint = new THREE.Vector3();
+            ray.at(100, endPoint);
+            points.push(endPoint);
+
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, material);
             scene.add(line);
-            setTimeout(() => scene.remove(line), 100);
+            setTimeout(() => scene.remove(line), 150);
         }
 
         function dieAndRespawn() {
@@ -403,8 +482,7 @@
         function setupConn(conn) {
             conn.on('open', () => {
                 connections[conn.peer] = conn;
-                // Envia pacote inicial
-                conn.send({ type: 'hello', nick: myNick, x: 0, y: 0.5, z: 0, senderId: myID, scale: isGiant?5:1, color: myColor });
+                conn.send({ type: 'hello', nick: myNick, x: 0, y: 0.5, z: 0, senderId: myID, scale: isGiant?5:1, color: myColor, skin: mySkin });
                 updatePlayerList();
             });
             conn.on('data', data => handleData(data, conn.peer));
@@ -473,6 +551,104 @@
             box.scrollTop = box.scrollHeight;
         }
 
+        // --- CRIAÇÃO DE OBJETOS ---
+
+        function generateFaceTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFE0BD'; // Pele
+            ctx.fillRect(0,0,64,64);
+            
+            // Olhos
+            ctx.fillStyle = 'white';
+            ctx.fillRect(10, 20, 15, 10);
+            ctx.fillRect(39, 20, 15, 10);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(15, 22, 5, 5);
+            ctx.fillRect(44, 22, 5, 5);
+
+            // Boca
+            ctx.fillStyle = '#aa5555';
+            ctx.fillRect(20, 45, 24, 5);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createHumanoid(color, skinType) {
+            const group = new THREE.Group();
+
+            let torsoColor = color;
+            if(skinType === 'suit') torsoColor = 0x000044;
+            if(skinType === 'military') torsoColor = 0x4b5320;
+            if(skinType === 'neon') torsoColor = 0x00ff00;
+            if(skinType === 'casual') torsoColor = 0x111111;
+
+            // Tronco
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.4), new THREE.MeshPhongMaterial({ color: torsoColor }));
+            torso.position.y = 0.35;
+            group.add(torso);
+
+            // Cabeça
+            const headMat = new THREE.MeshBasicMaterial({ map: generateFaceTexture() });
+            // Precisamos aplicar a textura só na frente, então array de materiais
+            const skinMat = new THREE.MeshPhongMaterial({color: 0xFFE0BD});
+            const headMaterials = [skinMat, skinMat, skinMat, skinMat, headMat, skinMat]; // A ordem do cubo varia, mas geralmente index 4 ou 5 é frente
+
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), headMaterials);
+            head.position.y = 0.9;
+            group.add(head);
+
+            // Membros
+            const limbMat = new THREE.MeshPhongMaterial({color: skinType === 'neon' ? 0x000000 : 0x222222});
+            const limbGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
+
+            // Braços (pivot no topo)
+            const leftArm = new THREE.Mesh(limbGeo, new THREE.MeshPhongMaterial({color: color}));
+            leftArm.position.set(-0.45, 0.5, 0);
+            group.add(leftArm);
+
+            const rightArm = new THREE.Mesh(limbGeo, new THREE.MeshPhongMaterial({color: color}));
+            rightArm.position.set(0.45, 0.5, 0);
+            group.add(rightArm);
+
+            // Pernas
+            const leftLeg = new THREE.Mesh(limbGeo, limbMat);
+            leftLeg.position.set(-0.2, -0.3, 0);
+            group.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(limbGeo, limbMat);
+            rightLeg.position.set(0.2, -0.3, 0);
+            group.add(rightLeg);
+
+            // Guardar referências para animação dentro do objeto (hack simples)
+            group.userData = { leftArm, rightArm, leftLeg, rightLeg, head };
+
+            return group;
+        }
+
+        function createSofa() {
+            const sofaGroup = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({color: 0x8B4513}); // Marrom couro
+            
+            // Assento
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1.5), mat);
+            seat.position.y = 0.25;
+            
+            // Encosto
+            const back = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, 0.3), mat);
+            back.position.set(0, 0.75, -0.6);
+
+            // Braços
+            const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 1.5), mat);
+            arm1.position.set(-1.3, 0.5, 0);
+            const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 1.5), mat);
+            arm2.position.set(1.3, 0.5, 0);
+
+            sofaGroup.add(seat, back, arm1, arm2);
+            return sofaGroup;
+        }
+
         function createSign(text, color) {
             const canvas = document.createElement('canvas');
             canvas.width = 512; canvas.height = 128;
@@ -485,42 +661,32 @@
             ctx.textBaseline = 'middle';
             ctx.fillText(text, 256, 64);
             const tex = new THREE.CanvasTexture(canvas);
-            const mat = new THREE.MeshBasicMaterial({ map: tex });
+            const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
             return new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), mat);
         }
 
-        // Helper para criar armas
         function createWeaponMesh(type) {
             const group = new THREE.Group();
             if(type === 'sword') {
-                // Cabo
-                const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.1), new THREE.MeshLambertMaterial({color:0x8B4513}));
-                // Lâmina
-                const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.05), new THREE.MeshStandardMaterial({color:0xcccccc, metalness:0.8, roughness:0.2}));
+                const handle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.05), new THREE.MeshLambertMaterial({color:0x8B4513}));
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.2, 0.02), new THREE.MeshStandardMaterial({color:0xcccccc}));
                 blade.position.y = 0.8;
-                // Guarda
-                const guard = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.1), new THREE.MeshLambertMaterial({color:0xFFD700}));
+                const guard = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.05), new THREE.MeshLambertMaterial({color:0xFFD700}));
                 guard.position.y = 0.2;
-                
                 group.add(handle, blade, guard);
-                // Posicionar na "mão" (lado direito do cubo)
-                group.rotation.x = Math.PI / 2; // Apontar pra frente
-                group.position.set(0.6, 0, -0.4);
+                group.rotation.x = Math.PI / 2; 
+                group.position.set(0.6, 0.5, -0.4); // Ajustado para a mão
             } else if (type === 'gun') {
-                // Corpo da arma
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.6), new THREE.MeshLambertMaterial({color:0x111111}));
-                // Cano
-                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6), new THREE.MeshLambertMaterial({color:0x333333}));
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.5), new THREE.MeshLambertMaterial({color:0x111111}));
+                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5), new THREE.MeshLambertMaterial({color:0x333333}));
                 barrel.rotation.x = Math.PI / 2;
                 barrel.position.z = -0.3;
                 barrel.position.y = 0.05;
-                // Cabo
-                const handle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), new THREE.MeshLambertMaterial({color:0x000000}));
-                handle.position.y = -0.2;
-                handle.rotation.x = 0.5;
-
+                const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), new THREE.MeshLambertMaterial({color:0x000000}));
+                handle.position.y = -0.15;
+                handle.rotation.x = 0.3;
                 group.add(body, barrel, handle);
-                group.position.set(0.6, 0, -0.4);
+                group.position.set(0.6, 0.5, -0.4);
             }
             return group;
         }
@@ -551,36 +717,43 @@
             scene.add( dirLight );
 
             // CHÃO
-            const planeGeo = new THREE.PlaneGeometry(100, 100);
+            const planeGeo = new THREE.PlaneGeometry(150, 150);
             const planeMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
             const plane = new THREE.Mesh(planeGeo, planeMat);
             plane.rotation.x = -Math.PI / 2;
             plane.receiveShadow = true;
             scene.add(plane);
-            scene.add(new THREE.GridHelper(100, 50, 0x000000, 0x004400));
+            scene.add(new THREE.GridHelper(150, 75, 0x000000, 0x004400));
             collidableObjects.push(plane);
 
             // PAREDES
             const wallMat = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.1, transparent: true, side: THREE.DoubleSide });
-            const w1 = new THREE.Mesh(new THREE.BoxGeometry(100, 50, 1), wallMat); w1.position.set(0, 25, -50); scene.add(w1);
-            const w2 = new THREE.Mesh(new THREE.BoxGeometry(100, 50, 1), wallMat); w2.position.set(0, 25, 50); scene.add(w2);
-            const w3 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 100), wallMat); w3.position.set(50, 25, 0); scene.add(w3);
-            const w4 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 100), wallMat); w4.position.set(-50, 25, 0); scene.add(w4);
+            const w1 = new THREE.Mesh(new THREE.BoxGeometry(150, 50, 1), wallMat); w1.position.set(0, 25, -75); scene.add(w1);
+            const w2 = new THREE.Mesh(new THREE.BoxGeometry(150, 50, 1), wallMat); w2.position.set(0, 25, 75); scene.add(w2);
+            const w3 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 150), wallMat); w3.position.set(75, 25, 0); scene.add(w3);
+            const w4 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 150), wallMat); w4.position.set(-75, 25, 0); scene.add(w4);
             collidableObjects.push(w1, w2, w3, w4);
 
-            // --- ARENA DE LUTA (MENOR AGORA) ---
-            // Tamanho alterado de 30 para 12
-            const arenaGeo = new THREE.BoxGeometry(12, 1, 12);
-            const arenaMat = new THREE.MeshStandardMaterial({ color: 0xaa0000 }); 
+            // --- ARENA PVP (NO CHÃO AGORA) ---
+            const arenaGeo = new THREE.BoxGeometry(20, 0.2, 20);
+            const arenaMat = new THREE.MeshStandardMaterial({ color: 0x880000 }); 
             const arena = new THREE.Mesh(arenaGeo, arenaMat);
-            arena.position.set(-40, 5, 0); 
+            arena.position.set(-40, 0.1, 0); 
             arena.receiveShadow = true;
             scene.add(arena);
-            collidableObjects.push(arena);
-            
-            const signArena = createSign("ARENA PVP", "#000");
-            signArena.position.set(-40, 10, 0);
+            // Placa
+            const signArena = createSign("ARENA PVP (AUTO-EQUIP)", "#000");
+            signArena.position.set(-40, 4, -10);
             scene.add(signArena);
+
+            // --- SOFÁS ESPALHADOS ---
+            for(let i=0; i<5; i++) {
+                const sofa = createSofa();
+                sofa.position.set(Math.random() * 40 - 20, 0, Math.random() * 40 + 10);
+                sofa.rotation.y = Math.random() * Math.PI;
+                scene.add(sofa);
+                collidableObjects.push(sofa.children[0]); // Assento colide
+            }
 
             // --- PARKOUR ---
             const boxGeo = new THREE.BoxGeometry(2, 0.5, 2);
@@ -592,31 +765,66 @@
                 collidableObjects.push(p);
             }
 
-            // --- ESCADA ---
+            // --- ESCADA E SALA FINAL ---
             const stepGeo = new THREE.BoxGeometry(3, 0.5, 1);
             const stepMat = new THREE.MeshStandardMaterial({ color: 0xFF00FF });
+            let lastX = 0, lastY = 0, lastZ = 0;
+            
             for(let i=0; i<80; i++) {
                 const step = new THREE.Mesh(stepGeo, stepMat);
                 const angle = i * 0.3; 
                 const radius = 8;
-                step.position.set(Math.cos(angle) * radius + 20, 1 + (i * 0.8), Math.sin(angle) * radius + 20);
+                lastX = Math.cos(angle) * radius + 20;
+                lastY = 1 + (i * 0.8);
+                lastZ = Math.sin(angle) * radius + 20;
+                
+                step.position.set(lastX, lastY, lastZ);
                 step.rotation.y = -angle;
                 scene.add(step);
                 collidableObjects.push(step);
             }
 
-            // PLAYER & WEAPONS
-            playerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: myColor }));
+            // A Sala Final
+            const finalRoomY = lastY + 0.5;
+            const floorFinal = new THREE.Mesh(new THREE.BoxGeometry(15, 1, 15), new THREE.MeshStandardMaterial({color: 0xeeeeee}));
+            floorFinal.position.set(lastX, finalRoomY, lastZ);
+            scene.add(floorFinal);
+            collidableObjects.push(floorFinal);
+
+            const sofaFinal = createSofa();
+            sofaFinal.position.set(lastX, finalRoomY + 0.5, lastZ - 3);
+            scene.add(sofaFinal);
+
+            const textFinal = createSign("VOCÊ CHEGOU AO FINAL :)", "#008800");
+            textFinal.position.set(lastX, finalRoomY + 4, lastZ);
+            scene.add(textFinal);
+
+
+            // PLAYER & CUSTOMIZAÇÃO
+            playerMesh = createHumanoid(myColor, mySkin);
             playerMesh.position.y = 0.5;
             playerMesh.castShadow = true;
             
-            // Adicionar armas ao player
+            // Referencias para animacao local
+            playerLimbs = playerMesh.userData;
+
+            // Adicionar armas
             mySword = createWeaponMesh('sword');
             myGun = createWeaponMesh('gun');
             mySword.visible = false;
             myGun.visible = false;
-            playerMesh.add(mySword);
-            playerMesh.add(myGun);
+            
+            // Anexar ao braço direito do humanoide (group index 4 é rightArm no meu createHumanoid? Não, é melhor usar userData)
+            if(playerLimbs.rightArm) {
+                playerLimbs.rightArm.add(mySword);
+                playerLimbs.rightArm.add(myGun);
+                // Ajustar posição relativa ao braço
+                mySword.position.set(0, -0.4, 0.2); 
+                mySword.rotation.set(Math.PI/2, 0, 0);
+                
+                myGun.position.set(0, -0.4, 0.2);
+                myGun.rotation.set(0, Math.PI/2, 0); // Ajuste fino
+            }
 
             scene.add(playerMesh);
 
@@ -638,19 +846,20 @@
         }
 
         function checkCollisions() {
-            if(playerMesh.position.x > 49) playerMesh.position.x = 49;
-            if(playerMesh.position.x < -49) playerMesh.position.x = -49;
-            if(playerMesh.position.z > 49) playerMesh.position.z = 49;
-            if(playerMesh.position.z < -49) playerMesh.position.z = -49;
+            if(playerMesh.position.x > 74) playerMesh.position.x = 74;
+            if(playerMesh.position.x < -74) playerMesh.position.x = -74;
+            if(playerMesh.position.z > 74) playerMesh.position.z = 74;
+            if(playerMesh.position.z < -74) playerMesh.position.z = -74;
 
             raycaster.set(playerMesh.position, new THREE.Vector3(0, -1, 0));
-            const intersects = raycaster.intersectObjects(collidableObjects);
+            // Intersectar recursivo para pegar os filhos dos grupos (sofás, etc)
+            const intersects = raycaster.intersectObjects(collidableObjects, true);
             
-            if (intersects.length > 0 && intersects[0].distance < 0.6 + velocityY) {
+            if (intersects.length > 0 && intersects[0].distance < 0.1 + velocityY) {
                  if(velocityY <= 0) {
                      isGrounded = true;
                      velocityY = 0;
-                     playerMesh.position.y = intersects[0].point.y + 0.5;
+                     playerMesh.position.y = intersects[0].point.y; // Ajuste exato no chão
                  }
             } else {
                 isGrounded = false;
@@ -674,6 +883,37 @@
             if(keys.a) { playerMesh.position.add(right.multiplyScalar(-moveSpeed)); moved = true; } 
             if(keys.d) { playerMesh.position.add(right.multiplyScalar(moveSpeed)); moved = true; } 
 
+            // Rotação do player para a direção do movimento
+            if(moved) {
+                const angle = Math.atan2(
+                    (keys.d?1:0) - (keys.a?1:0), 
+                    (keys.w?1:0) - (keys.s?1:0)
+                );
+                // Ajustar rotação baseada na câmera + input... simplificado:
+                // Apenas rotaciona o modelo visual se quiser. Por enquanto mantem fixo ou segue a camera
+                playerMesh.rotation.y = Math.atan2(forward.x, forward.z); 
+                if(keys.a) playerMesh.rotation.y += Math.PI/2;
+                if(keys.d) playerMesh.rotation.y -= Math.PI/2;
+                if(keys.s) playerMesh.rotation.y += Math.PI;
+
+                // Animação de andar (swing limbs)
+                const time = Date.now() * 0.01;
+                if(playerLimbs.leftArm) {
+                    playerLimbs.leftArm.rotation.x = Math.sin(time) * 0.5;
+                    playerLimbs.rightArm.rotation.x = Math.sin(time + Math.PI) * 0.5;
+                    playerLimbs.leftLeg.rotation.x = Math.sin(time + Math.PI) * 0.5;
+                    playerLimbs.rightLeg.rotation.x = Math.sin(time) * 0.5;
+                }
+            } else {
+                // Reset pose
+                if(playerLimbs.leftArm) {
+                    playerLimbs.leftArm.rotation.x = 0;
+                    playerLimbs.rightArm.rotation.x = 0;
+                    playerLimbs.leftLeg.rotation.x = 0;
+                    playerLimbs.rightLeg.rotation.x = 0;
+                }
+            }
+
             if(!isFlying) {
                 velocityY -= 0.015; 
                 playerMesh.position.y += velocityY;
@@ -687,18 +927,18 @@
             controls.target.copy(playerMesh.position);
             controls.update();
 
-            // Lógica Arena Atualizada para Tamanho Menor (Centro -40, Raio aprox 6)
-            if(playerMesh.position.x > -46 && playerMesh.position.x < -34 && 
-               playerMesh.position.z > -6 && playerMesh.position.z < 6 && 
-               playerMesh.position.y > 4) {
+            // Lógica Arena PvP (Baseada na posição -40, 0, 0 com raio 10)
+            const dx = playerMesh.position.x - (-40);
+            const dz = playerMesh.position.z - 0;
+            const dist = Math.sqrt(dx*dx + dz*dz);
+            
+            if(dist < 10) {
                    if(!inArena) { inArena = true; updateWeaponStatus(); }
-               } else {
+            } else {
                    if(inArena) { inArena = false; updateWeaponStatus(); }
-               }
+            }
 
             if(moved || !isGrounded || isFlying || inArena || hasGun) {
-                // Enviar estado da arma no pacote de movimento
-                // wp: 0 = nada, 1 = espada, 2 = arma
                 const wpState = hasGun ? 2 : (inArena ? 1 : 0);
                 
                 const moveData = { 
@@ -706,10 +946,12 @@
                     x:playerMesh.position.x, 
                     y:playerMesh.position.y, 
                     z:playerMesh.position.z, 
+                    ry: playerMesh.rotation.y, // Enviar rotação Y
                     nick: myNick, 
                     senderId: myID,
                     scale: isGiant ? 5 : 1,
                     color: myColor,
+                    skin: mySkin,
                     wp: wpState 
                 };
                 if(isHost) broadcast(moveData, null); 
@@ -720,7 +962,24 @@
             for(let id in remotePlayers) {
                 const p = remotePlayers[id];
                 p.mesh.position.lerp(p.targetPos, 0.2);
-                const tagOffset = p.mesh.scale.x * 1.2;
+                if(p.targetRot !== undefined) {
+                    // Interpolação de rotação simples
+                    p.mesh.rotation.y = p.targetRot; 
+                }
+                
+                // Animação remota simples
+                const speed = p.mesh.position.distanceTo(p.targetPos);
+                if(speed > 0.01) {
+                    const rTime = Date.now() * 0.01;
+                     if(p.limbs && p.limbs.leftArm) {
+                        p.limbs.leftArm.rotation.x = Math.sin(rTime) * 0.5;
+                        p.limbs.rightArm.rotation.x = Math.sin(rTime + Math.PI) * 0.5;
+                        p.limbs.leftLeg.rotation.x = Math.sin(rTime + Math.PI) * 0.5;
+                        p.limbs.rightLeg.rotation.x = Math.sin(rTime) * 0.5;
+                    }
+                }
+
+                const tagOffset = p.mesh.scale.x * 2.0;
                 const tempV = p.mesh.position.clone().add(new THREE.Vector3(0, tagOffset, 0)).project(camera);
                 if(tempV.z < 1) {
                      p.tag.style.left = (tempV.x * .5 + .5) * window.innerWidth + 'px';
@@ -734,16 +993,25 @@
         function updateRemote(id, data) {
             if(!remotePlayers[id]) {
                 const pColor = data.color || 0x00ffff;
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: pColor }));
+                const pSkin = data.skin || "casual";
                 
-                // Adicionar armas visuais ao remote player
+                // Criar o modelo humanóide para o remoto também
+                const mesh = createHumanoid(pColor, pSkin);
+                
+                // Armas remotas
                 const rSword = createWeaponMesh('sword');
                 const rGun = createWeaponMesh('gun');
                 rSword.visible = false;
                 rGun.visible = false;
-                mesh.add(rSword);
-                mesh.add(rGun);
-                
+
+                // Anexar ao braço direito remoto
+                if(mesh.userData.rightArm) {
+                    mesh.userData.rightArm.add(rSword);
+                    mesh.userData.rightArm.add(rGun);
+                    rSword.position.set(0, -0.4, 0.2); rSword.rotation.set(Math.PI/2, 0, 0);
+                    rGun.position.set(0, -0.4, 0.2); rGun.rotation.set(0, Math.PI/2, 0);
+                }
+
                 mesh.castShadow = true;
                 scene.add(mesh);
                 const tag = document.createElement('div');
@@ -753,16 +1021,18 @@
                 
                 remotePlayers[id] = { 
                     mesh, tag, 
-                    targetPos: new THREE.Vector3(data.x, data.y, data.z), 
+                    targetPos: new THREE.Vector3(data.x, data.y, data.z),
+                    targetRot: 0, 
                     nick: data.nick,
                     sword: rSword,
-                    gun: rGun 
+                    gun: rGun,
+                    limbs: mesh.userData
                 };
             } else {
                 remotePlayers[id].targetPos.set(data.x, data.y, data.z);
+                if(data.ry !== undefined) remotePlayers[id].targetRot = data.ry;
                 if(data.scale) remotePlayers[id].mesh.scale.set(data.scale, data.scale, data.scale);
                 
-                // Atualizar arma do remote player baseado no pacote 'wp'
                 const p = remotePlayers[id];
                 if(data.wp === 2) { p.sword.visible=false; p.gun.visible=true; }
                 else if(data.wp === 1) { p.sword.visible=true; p.gun.visible=false; }
