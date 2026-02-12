@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ENGINE - V8 HUMAN UPDATE</title>
+    <title>NEXUS ENGINE - V8.1 PHYSICS FIX</title>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
@@ -164,7 +164,7 @@
         let peer, connections = {}; 
         let myNick = "", myEmail = "", myCode = "", myID = "";
         let myColor = "#00ff00";
-        let mySkin = "casual"; // Skin selecionada
+        let mySkin = "casual"; 
         let remotePlayers = {}; 
         let isHost = false; 
         const keys = { w:false, a:false, s:false, d:false };
@@ -173,13 +173,10 @@
         let raycaster = new THREE.Raycaster();
         let combatRaycaster = new THREE.Raycaster();
         
-        // Referências para animação
         let playerLimbs = { leftArm: null, rightArm: null, leftLeg: null, rightLeg: null };
 
-        // Armas Visuais
         let mySword, myGun;
 
-        // Atributos Especiais
         let isFlying = false;
         let isGiant = false;
         let isAdmin = false;
@@ -218,13 +215,11 @@
                 myColor = data.color;
                 mySkin = data.skin || "casual";
                 
-                // Preencher campos só pra visual
                 document.getElementById('email-field').value = myEmail;
                 document.getElementById('user-field').value = myNick;
                 document.getElementById('color-picker').value = myColor;
                 document.getElementById('skin-select').value = mySkin;
 
-                // Auto-login
                 if(myEmail === "luanaaalmeidadesouza@gmail.com") {
                     myNick = "👑 " + myNick;
                     isAdmin = true;
@@ -263,7 +258,6 @@
 
         function verifyAndStart() {
             if(document.getElementById('2fa-input').value === myCode) {
-                // Salvar login
                 localStorage.setItem('nexus_auth_v2', JSON.stringify({
                     email: myEmail, nick: myNick, color: myColor, skin: mySkin
                 }));
@@ -331,7 +325,6 @@
         // --- SISTEMA DE COMBATE & VISUAL ---
         function updateWeaponStatus() {
             const alertBox = document.getElementById('weapon-alert');
-            // Controle de visibilidade
             if (mySword && myGun) {
                 if(hasGun) {
                     mySword.visible = false;
@@ -363,17 +356,15 @@
 
             combatRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             
-            // Coletar meshes dos outros players (o grupo inteiro)
             const targets = [];
             for(let id in remotePlayers) {
-                targets.push(remotePlayers[id].mesh); // Verifica colisão com o grupo principal
+                targets.push(remotePlayers[id].mesh);
             }
 
-            const range = hasGun ? 200 : 5; // Arma ADM tem longo alcance
-            const intersects = combatRaycaster.intersectObjects(targets, true); // true para recursivo (pegar filhos do grupo)
+            const range = hasGun ? 200 : 5; 
+            const intersects = combatRaycaster.intersectObjects(targets, true);
 
             if(intersects.length > 0 && intersects[0].distance <= range) {
-                // Encontrar a raiz do objeto atingido
                 let hitObj = intersects[0].object;
                 while(hitObj.parent && hitObj.parent.type !== "Scene") {
                     hitObj = hitObj.parent;
@@ -385,7 +376,6 @@
                         const dmgData = { type: 'damage', targetId: id, damage: 100, shooter: myNick };
                         
                         if(hasGun) {
-                            // Dano garantido da arma ADM
                             if(isHost) {
                                 const conn = connections[id];
                                 if(conn) conn.send(dmgData);
@@ -394,7 +384,6 @@
                             }
                             addChatMessage("COMBATE", `TIRO LASER EM ${remotePlayers[id].nick}!`);
                         } else {
-                            // Espada (já existente)
                             if(isHost) {
                                 const conn = connections[id];
                                 if(conn) conn.send(dmgData);
@@ -408,7 +397,6 @@
                 }
             } 
             
-            // Efeito visual do tiro sempre aparece se tiver arma
             if(hasGun) showLaser(combatRaycaster.ray);
         }
 
@@ -424,16 +412,11 @@
         function showLaser(ray) {
             const material = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
             const points = [];
-            
-            // Posição de origem (arma)
             const startPos = playerMesh.position.clone().add(new THREE.Vector3(0.5, 0.5, 0).applyQuaternion(playerMesh.quaternion));
             points.push(startPos);
-            
-            // Ponto final (longe)
             const endPoint = new THREE.Vector3();
             ray.at(100, endPoint);
             points.push(endPoint);
-
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, material);
             scene.add(line);
@@ -557,10 +540,9 @@
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#FFE0BD'; // Pele
+            ctx.fillStyle = '#FFE0BD'; 
             ctx.fillRect(0,0,64,64);
             
-            // Olhos
             ctx.fillStyle = 'white';
             ctx.fillRect(10, 20, 15, 10);
             ctx.fillRect(39, 20, 15, 10);
@@ -568,7 +550,6 @@
             ctx.fillRect(15, 22, 5, 5);
             ctx.fillRect(44, 22, 5, 5);
 
-            // Boca
             ctx.fillStyle = '#aa5555';
             ctx.fillRect(20, 45, 24, 5);
 
@@ -584,26 +565,21 @@
             if(skinType === 'neon') torsoColor = 0x00ff00;
             if(skinType === 'casual') torsoColor = 0x111111;
 
-            // Tronco
             const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.4), new THREE.MeshPhongMaterial({ color: torsoColor }));
             torso.position.y = 0.35;
             group.add(torso);
 
-            // Cabeça
             const headMat = new THREE.MeshBasicMaterial({ map: generateFaceTexture() });
-            // Precisamos aplicar a textura só na frente, então array de materiais
             const skinMat = new THREE.MeshPhongMaterial({color: 0xFFE0BD});
-            const headMaterials = [skinMat, skinMat, skinMat, skinMat, headMat, skinMat]; // A ordem do cubo varia, mas geralmente index 4 ou 5 é frente
+            const headMaterials = [skinMat, skinMat, skinMat, skinMat, headMat, skinMat];
 
             const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), headMaterials);
             head.position.y = 0.9;
             group.add(head);
 
-            // Membros
             const limbMat = new THREE.MeshPhongMaterial({color: skinType === 'neon' ? 0x000000 : 0x222222});
             const limbGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
 
-            // Braços (pivot no topo)
             const leftArm = new THREE.Mesh(limbGeo, new THREE.MeshPhongMaterial({color: color}));
             leftArm.position.set(-0.45, 0.5, 0);
             group.add(leftArm);
@@ -612,7 +588,6 @@
             rightArm.position.set(0.45, 0.5, 0);
             group.add(rightArm);
 
-            // Pernas
             const leftLeg = new THREE.Mesh(limbGeo, limbMat);
             leftLeg.position.set(-0.2, -0.3, 0);
             group.add(leftLeg);
@@ -621,7 +596,6 @@
             rightLeg.position.set(0.2, -0.3, 0);
             group.add(rightLeg);
 
-            // Guardar referências para animação dentro do objeto (hack simples)
             group.userData = { leftArm, rightArm, leftLeg, rightLeg, head };
 
             return group;
@@ -629,17 +603,14 @@
 
         function createSofa() {
             const sofaGroup = new THREE.Group();
-            const mat = new THREE.MeshLambertMaterial({color: 0x8B4513}); // Marrom couro
+            const mat = new THREE.MeshLambertMaterial({color: 0x8B4513}); 
             
-            // Assento
             const seat = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1.5), mat);
             seat.position.y = 0.25;
             
-            // Encosto
             const back = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, 0.3), mat);
             back.position.set(0, 0.75, -0.6);
 
-            // Braços
             const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 1.5), mat);
             arm1.position.set(-1.3, 0.5, 0);
             const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 1.5), mat);
@@ -675,7 +646,7 @@
                 guard.position.y = 0.2;
                 group.add(handle, blade, guard);
                 group.rotation.x = Math.PI / 2; 
-                group.position.set(0.6, 0.5, -0.4); // Ajustado para a mão
+                group.position.set(0.6, 0.5, -0.4); 
             } else if (type === 'gun') {
                 const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.5), new THREE.MeshLambertMaterial({color:0x111111}));
                 const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5), new THREE.MeshLambertMaterial({color:0x333333}));
@@ -734,25 +705,24 @@
             const w4 = new THREE.Mesh(new THREE.BoxGeometry(1, 50, 150), wallMat); w4.position.set(-75, 25, 0); scene.add(w4);
             collidableObjects.push(w1, w2, w3, w4);
 
-            // --- ARENA PVP (NO CHÃO AGORA) ---
+            // --- ARENA PVP (NO CHÃO) ---
             const arenaGeo = new THREE.BoxGeometry(20, 0.2, 20);
             const arenaMat = new THREE.MeshStandardMaterial({ color: 0x880000 }); 
             const arena = new THREE.Mesh(arenaGeo, arenaMat);
             arena.position.set(-40, 0.1, 0); 
             arena.receiveShadow = true;
             scene.add(arena);
-            // Placa
             const signArena = createSign("ARENA PVP (AUTO-EQUIP)", "#000");
             signArena.position.set(-40, 4, -10);
             scene.add(signArena);
 
-            // --- SOFÁS ESPALHADOS ---
+            // --- SOFÁS ---
             for(let i=0; i<5; i++) {
                 const sofa = createSofa();
                 sofa.position.set(Math.random() * 40 - 20, 0, Math.random() * 40 + 10);
                 sofa.rotation.y = Math.random() * Math.PI;
                 scene.add(sofa);
-                collidableObjects.push(sofa.children[0]); // Assento colide
+                collidableObjects.push(sofa.children[0]); 
             }
 
             // --- PARKOUR ---
@@ -784,7 +754,6 @@
                 collidableObjects.push(step);
             }
 
-            // A Sala Final
             const finalRoomY = lastY + 0.5;
             const floorFinal = new THREE.Mesh(new THREE.BoxGeometry(15, 1, 15), new THREE.MeshStandardMaterial({color: 0xeeeeee}));
             floorFinal.position.set(lastX, finalRoomY, lastZ);
@@ -800,35 +769,29 @@
             scene.add(textFinal);
 
 
-            // PLAYER & CUSTOMIZAÇÃO
+            // PLAYER
             playerMesh = createHumanoid(myColor, mySkin);
             playerMesh.position.y = 0.5;
             playerMesh.castShadow = true;
             
-            // Referencias para animacao local
             playerLimbs = playerMesh.userData;
 
-            // Adicionar armas
             mySword = createWeaponMesh('sword');
             myGun = createWeaponMesh('gun');
             mySword.visible = false;
             myGun.visible = false;
             
-            // Anexar ao braço direito do humanoide (group index 4 é rightArm no meu createHumanoid? Não, é melhor usar userData)
             if(playerLimbs.rightArm) {
                 playerLimbs.rightArm.add(mySword);
                 playerLimbs.rightArm.add(myGun);
-                // Ajustar posição relativa ao braço
                 mySword.position.set(0, -0.4, 0.2); 
                 mySword.rotation.set(Math.PI/2, 0, 0);
-                
                 myGun.position.set(0, -0.4, 0.2);
-                myGun.rotation.set(0, Math.PI/2, 0); // Ajuste fino
+                myGun.rotation.set(0, Math.PI/2, 0); 
             }
 
             scene.add(playerMesh);
 
-            // CÂMERA
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
@@ -845,21 +808,34 @@
             if(isGrounded) { velocityY = 0.35; isGrounded = false; } 
         }
 
+        // --- CORREÇÃO DE COLISÃO AQUI ---
         function checkCollisions() {
             if(playerMesh.position.x > 74) playerMesh.position.x = 74;
             if(playerMesh.position.x < -74) playerMesh.position.x = -74;
             if(playerMesh.position.z > 74) playerMesh.position.z = 74;
             if(playerMesh.position.z < -74) playerMesh.position.z = -74;
 
-            raycaster.set(playerMesh.position, new THREE.Vector3(0, -1, 0));
-            // Intersectar recursivo para pegar os filhos dos grupos (sofás, etc)
+            // FIX: Levanta a origem do raio para o "umbigo" (y+0.5)
+            // Assim o raio sempre dispara de cima para baixo, mesmo se os pés entrarem um pouco no chão
+            const rayOrigin = playerMesh.position.clone();
+            rayOrigin.y += 0.5; 
+
+            raycaster.set(rayOrigin, new THREE.Vector3(0, -1, 0));
             const intersects = raycaster.intersectObjects(collidableObjects, true);
             
-            if (intersects.length > 0 && intersects[0].distance < 0.1 + velocityY) {
-                 if(velocityY <= 0) {
-                     isGrounded = true;
-                     velocityY = 0;
-                     playerMesh.position.y = intersects[0].point.y; // Ajuste exato no chão
+            // Distância esperada: 0.5 (metade da altura) + offset
+            if (intersects.length > 0) {
+                 const dist = intersects[0].distance;
+                 // Se a distancia for menor que (Altura + Buffer + Velocidade atual)
+                 if(dist < 0.6 + Math.abs(velocityY)) {
+                     if(velocityY <= 0) {
+                         isGrounded = true;
+                         velocityY = 0;
+                         // Pousa exatamente no ponto de contato
+                         playerMesh.position.y = intersects[0].point.y; 
+                     }
+                 } else {
+                     isGrounded = false;
                  }
             } else {
                 isGrounded = false;
@@ -883,20 +859,12 @@
             if(keys.a) { playerMesh.position.add(right.multiplyScalar(-moveSpeed)); moved = true; } 
             if(keys.d) { playerMesh.position.add(right.multiplyScalar(moveSpeed)); moved = true; } 
 
-            // Rotação do player para a direção do movimento
             if(moved) {
-                const angle = Math.atan2(
-                    (keys.d?1:0) - (keys.a?1:0), 
-                    (keys.w?1:0) - (keys.s?1:0)
-                );
-                // Ajustar rotação baseada na câmera + input... simplificado:
-                // Apenas rotaciona o modelo visual se quiser. Por enquanto mantem fixo ou segue a camera
                 playerMesh.rotation.y = Math.atan2(forward.x, forward.z); 
                 if(keys.a) playerMesh.rotation.y += Math.PI/2;
                 if(keys.d) playerMesh.rotation.y -= Math.PI/2;
                 if(keys.s) playerMesh.rotation.y += Math.PI;
 
-                // Animação de andar (swing limbs)
                 const time = Date.now() * 0.01;
                 if(playerLimbs.leftArm) {
                     playerLimbs.leftArm.rotation.x = Math.sin(time) * 0.5;
@@ -905,7 +873,6 @@
                     playerLimbs.rightLeg.rotation.x = Math.sin(time) * 0.5;
                 }
             } else {
-                // Reset pose
                 if(playerLimbs.leftArm) {
                     playerLimbs.leftArm.rotation.x = 0;
                     playerLimbs.rightArm.rotation.x = 0;
@@ -927,7 +894,6 @@
             controls.target.copy(playerMesh.position);
             controls.update();
 
-            // Lógica Arena PvP (Baseada na posição -40, 0, 0 com raio 10)
             const dx = playerMesh.position.x - (-40);
             const dz = playerMesh.position.z - 0;
             const dist = Math.sqrt(dx*dx + dz*dz);
@@ -946,7 +912,7 @@
                     x:playerMesh.position.x, 
                     y:playerMesh.position.y, 
                     z:playerMesh.position.z, 
-                    ry: playerMesh.rotation.y, // Enviar rotação Y
+                    ry: playerMesh.rotation.y, 
                     nick: myNick, 
                     senderId: myID,
                     scale: isGiant ? 5 : 1,
@@ -958,16 +924,13 @@
                 else for(let id in connections) connections[id].send(moveData);
             }
 
-            // Tags e Interpolação
             for(let id in remotePlayers) {
                 const p = remotePlayers[id];
                 p.mesh.position.lerp(p.targetPos, 0.2);
                 if(p.targetRot !== undefined) {
-                    // Interpolação de rotação simples
                     p.mesh.rotation.y = p.targetRot; 
                 }
                 
-                // Animação remota simples
                 const speed = p.mesh.position.distanceTo(p.targetPos);
                 if(speed > 0.01) {
                     const rTime = Date.now() * 0.01;
@@ -987,7 +950,7 @@
                      p.tag.style.display = 'block';
                 } else { p.tag.style.display = 'none'; }
             }
-            renderer.render(scene, camera);
+            renderer.render(scene, camera); camera);
         }
 
         function updateRemote(id, data) {
@@ -995,16 +958,13 @@
                 const pColor = data.color || 0x00ffff;
                 const pSkin = data.skin || "casual";
                 
-                // Criar o modelo humanóide para o remoto também
                 const mesh = createHumanoid(pColor, pSkin);
                 
-                // Armas remotas
                 const rSword = createWeaponMesh('sword');
                 const rGun = createWeaponMesh('gun');
                 rSword.visible = false;
                 rGun.visible = false;
 
-                // Anexar ao braço direito remoto
                 if(mesh.userData.rightArm) {
                     mesh.userData.rightArm.add(rSword);
                     mesh.userData.rightArm.add(rGun);
@@ -1065,3 +1025,4 @@
     </script>
 </body>
 </html>
+        }
